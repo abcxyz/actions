@@ -1,0 +1,61 @@
+# Copyright 2023 The Authors (see AUTHORS file)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: 'java-lint'
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: 'The GitHub runner on which to execute. This must be a valid JSON but can represent a string, array of strings, or object.'
+        type: 'string'
+        default: '"ubuntu-latest"'
+      java_version:
+        description: 'The version of Java to install and use.'
+        type: 'string'
+        required: true
+      java_distribution:
+        description: 'The distibution of Java to use.'
+        type: 'string'
+        default: 'zulu'
+      google_java_format_version:
+        description: 'The version of google-java-format to use. This must be the full version with no leading "v" prefix.'
+        type: 'string'
+        default: '1.25.2'
+      directory:
+        description: 'Directory in which Java files reside.'
+        type: 'string'
+        default: '.'
+
+jobs:
+  # format runs the google-java-formatter and checks if there are any resulting
+  # file changes. It downloads the formatter into the GitHub Actions tool-cache,
+  # to be shared with future step invocations.
+  #
+  # Do not change this job name. Job names are used as identifiers in status
+  # checks, and changing this name will cause status checks to fail.
+  format:
+    runs-on: ${{ fromJSON(inputs.runs-on) }} # yamllint disable-line
+    steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+
+      - name: 'Lint Java'
+        uses: 'abcxyz/actions/.github/actions/lint-java@main' # ratchet:exclude
+        with:
+          java_version: '${{ inputs.java_version }}'
+          java_distribution: '${{ inputs.java_distribution }}'
+          google_java_format_version: '${{ inputs.google_java_format_version }}'
+          directory: '${{ inputs.directory }}'
+

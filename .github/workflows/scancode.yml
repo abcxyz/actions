@@ -1,0 +1,90 @@
+# Copyright 2023 The Authors (see AUTHORS file)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# Reusable workflow to call scancode action to scan licenses and copyrights and
+# upload the results.
+#
+# Example usage:
+#   name: scancode
+#
+#   on:
+#     workflow_dispatch:
+#       inputs:
+#         branch:
+#           description: 'branch'
+#           required: false
+#           type: 'string'
+#           default: 'main'
+#
+#   permissions:
+#     contents: 'read'
+#
+#   jobs:
+#     scancode:
+#       uses: 'abcxyz/actions/.github/workflows/scancode.yml@main' # pin tag or sha here.
+#       with:
+#         branch: '${{ inputs.branch }}'
+#
+# After install the workflow in your repository, to scan both the repository and
+# all transitive dependencies:
+#   1, checkout a branch to include the dependencies (i.e. run `go mod vendor`
+#   for Go) and push the change.
+#   2, use the branch in 1 as the input branch and run the workflow follow
+#   https://docs.github.com/en/actions/using-workflows/manually-running-a-workflow.
+# To download the results, follow https://docs.github.com/en/actions/managing-workflow-runs/downloading-workflow-artifacts.
+
+name: 'scancode'
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: 'The GitHub runner on which to execute. This must be a valid JSON but can represent a string, array of strings, or object.'
+        type: 'string'
+        default: '"ubuntu-latest"'
+      branch:
+        description: 'Which branch to scan.'
+        required: false
+        type: 'string'
+        default: 'main'
+env:
+  REPO_ROOT: '${{ github.repository }}'
+jobs:
+  scancode:
+    runs-on: ${{ fromJSON(inputs.runs-on) }} # yamllint disable-line
+    name: 'Scan code for licenses and copyrights'
+    permissions:
+      contents: 'read'
+    steps:
+      - run: 'mkdir -p ${{ env.REPO_ROOT }}'
+
+      # Checkout the repo branch to the given path.
+      - uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+        with:
+          path: '${{ env.REPO_ROOT }}'
+          ref: '${{ inputs.branch }}'
+
+      - name: 'Scan the code'
+        id: 'scancode'
+        uses: 'abcxyz/actions/.github/actions/scancode@main' # ratchet:exclude
+        with:
+          directory-to-scan: '${{ env.REPO_ROOT }}'
+
+      # Upload the scancode result artifacts to GitHub Action artifact, see
+      # https://docs.github.com/en/actions/managing-workflow-runs/downloading-workflow-artifacts.
+      - uses: 'actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08' # ratchet:actions/upload-artifact@v4
+        with:
+          name: 'scancode output'
+          path: |
+            ${{ steps.scancode.outputs.json }}
+            ${{ steps.scancode.outputs.csv }}

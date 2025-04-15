@@ -1,0 +1,102 @@
+# Copyright 2023 The Authors (see AUTHORS file)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: 'go-test'
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: 'The GitHub runner on which to execute. This must be a valid JSON but can represent a string, array of strings, or object.'
+        type: 'string'
+        default: '"ubuntu-latest"'
+      go_version:
+        description: 'The version of Go to install and use.'
+        type: 'string'
+      go_version_file:
+        description: 'Path to the go.mod file to extract a version.'
+        type: 'string'
+        default: 'go.mod'
+      go_packages:
+        description: 'List of go packages to test.'
+        type: 'string'
+        default: './...'
+      go_test_timeout:
+        description: 'Timeout for Go tests.'
+        type: 'string'
+        default: '10m'
+      env:
+        description: 'JSON-stringified environment variables for tests.'
+        type: 'string'
+        default: '{}'
+      directory:
+        description: 'Directory to the root of the Go module.'
+        type: 'string'
+        default: '.'
+
+jobs:
+  # test runs the Go test files. It checks out the source code and configures
+  # the Go runtime. It also generates a coverage report and puts the coverage
+  # report as a job summary.
+  #
+  # By default, it tests all packages, but that can be customized by setting
+  # "go_packages".
+  #
+  # Do not change this job name. Job names are used as identifiers in status
+  # checks, and changing this name will cause status checks to fail.
+  test:
+    runs-on: ${{ fromJSON(inputs.runs-on) }} # yamllint disable-line
+    steps:
+      - name: 'Configure environment variables'
+        if: |-
+          ${{ inputs.env != '{}' }}
+        # Use bash shell here to make it work with Windows host runner.
+        shell: 'bash'
+        run: |-
+          jq -r "to_entries | map(\"\(.key)=\(.value|tostring)\") | .[]" <<< '${{ inputs.env }}' >> $GITHUB_ENV
+
+      - name: 'Checkout'
+        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+
+      - name: 'Setup Go'
+        uses: 'actions/setup-go@f111f3307d8850f501ac008e886eec1fd1932a34' # ratchet:actions/setup-go@v5
+        with:
+          go-version: '${{ inputs.go_version }}'
+          go-version-file: '${{ inputs.go_version_file }}'
+
+      - name: 'Test'
+        shell: 'bash'
+        working-directory: '${{ inputs.directory }}'
+        run: |-
+          go test \
+            -count=1 \
+            -coverprofile=./coverage.out \
+            -race \
+            -shuffle=on \
+            -timeout='${{ inputs.go_test_timeout }}' \
+            ${{ inputs.go_packages }}
+
+      - name: 'Coverage'
+        shell: 'bash'
+        working-directory: '${{ inputs.directory }}'
+        run: |-
+          OUTPUT="$(go tool cover -func=./coverage.out)"
+          TOTAL="$(echo $OUTPUT | awk 'END{print $NF}')"
+          tee -a $GITHUB_STEP_SUMMARY > /dev/null <<EOF
+            ## Coverage: ${TOTAL}
+
+            \`\`\`text
+            ${OUTPUT}
+            \`\`\`
+          EOF

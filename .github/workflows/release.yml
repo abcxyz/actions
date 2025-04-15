@@ -1,0 +1,159 @@
+# Copyright 2024 The Authors (see AUTHORS file)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: 'release'
+
+on:
+  push:
+    branches:
+      - 'main'
+      - 'release/**/*'
+
+concurrency:
+  group: '${{ github.workflow }}-${{ github.event_name}}-${{ github.head_ref || github.ref }}'
+  cancel-in-progress: false
+
+jobs:
+  create-release:
+    if: |-
+      ${{ startsWith(github.event.head_commit.message, 'Release: v') }}
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    outputs:
+      created: '${{ steps.create-release.outputs.created || false }}'
+      tag: '${{ steps.create-release.outputs.tag }}'
+      version: '${{ steps.create-release.outputs.version }}'
+    steps:
+      - id: 'minty-auth'
+        uses: 'google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f' # ratchet:google-github-actions/auth@v2
+        with:
+          create_credentials_file: false
+          export_environment_variables: false
+          workload_identity_provider: '${{ vars.TOKEN_MINTER_WIF_PROVIDER }}'
+          service_account: '${{ vars.TOKEN_MINTER_WIF_SERVICE_ACCOUNT }}'
+          token_format: 'id_token'
+          id_token_audience: '${{ vars.TOKEN_MINTER_SERVICE_AUDIENCE }}'
+          id_token_include_email: true
+
+      - id: 'mint-token'
+        uses: 'abcxyz/github-token-minter/.github/actions/minty@main' # ratchet:exclude
+        with:
+          id_token: '${{ steps.minty-auth.outputs.id_token }}'
+          service_url: '${{ vars.TOKEN_MINTER_SERVICE_URL }}'
+          requested_permissions: |-
+            {
+              "scope": "release",
+              "repositories": ["${{ github.event.repository.name }}"],
+              "permissions": {
+                "contents": "write"
+              }
+            }
+
+      - name: 'Create release'
+        id: 'create-release'
+        uses: 'abcxyz/actions/.github/actions/create-release@main' # ratchet:exclude
+        with:
+          github_token: '${{ steps.mint-token.outputs.token }}'
+          expected_email: '${{ vars.TOKEN_MINTER_GITHUB_EMAIL }}'
+
+  publish-release:
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    needs:
+      - 'create-release'
+    steps:
+      - id: 'minty-auth'
+        uses: 'google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f' # ratchet:google-github-actions/auth@v2
+        with:
+          create_credentials_file: false
+          export_environment_variables: false
+          workload_identity_provider: '${{ vars.TOKEN_MINTER_WIF_PROVIDER }}'
+          service_account: '${{ vars.TOKEN_MINTER_WIF_SERVICE_ACCOUNT }}'
+          token_format: 'id_token'
+          id_token_audience: '${{ vars.TOKEN_MINTER_SERVICE_AUDIENCE }}'
+          id_token_include_email: true
+
+      - id: 'mint-token'
+        uses: 'abcxyz/github-token-minter/.github/actions/minty@main' # ratchet:exclude
+        with:
+          id_token: '${{ steps.minty-auth.outputs.id_token }}'
+          service_url: '${{ vars.TOKEN_MINTER_SERVICE_URL }}'
+          requested_permissions: |-
+            {
+              "scope": "release",
+              "repositories": ["${{ github.event.repository.name }}"],
+              "permissions": {
+                "contents": "write"
+              }
+            }
+
+      - name: 'Publish release'
+        env:
+          GH_TOKEN: '${{ steps.mint-token.outputs.token }}'
+          RELEASE_VERSION: 'v${{ needs.create-release.outputs.version }}'
+          REPO: '${{ github.repository }}'
+        run: |-
+          gh release edit "${RELEASE_VERSION}" \
+            --repo "${REPO}" \
+            --draft=false
+
+  cleanup-failed-release:
+    if: |-
+      ${{ always() && needs.create-release.outputs.created == 'true' && contains(fromJSON('["failure", "cancelled", "skipped"]'), needs.publish-release.result) }}
+    runs-on: 'ubuntu-latest'
+    needs:
+      - 'create-release'
+      - 'publish-release'
+    permissions:
+      contents: 'read'
+      id-token: 'write'
+    steps:
+      - id: 'minty-auth'
+        uses: 'google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f' # ratchet:google-github-actions/auth@v2
+        with:
+          create_credentials_file: false
+          export_environment_variables: false
+          workload_identity_provider: '${{ vars.TOKEN_MINTER_WIF_PROVIDER }}'
+          service_account: '${{ vars.TOKEN_MINTER_WIF_SERVICE_ACCOUNT }}'
+          token_format: 'id_token'
+          id_token_audience: '${{ vars.TOKEN_MINTER_SERVICE_AUDIENCE }}'
+          id_token_include_email: true
+
+      - id: 'mint-token'
+        uses: 'abcxyz/github-token-minter/.github/actions/minty@main' # ratchet:exclude
+        with:
+          id_token: '${{ steps.minty-auth.outputs.id_token }}'
+          service_url: '${{ vars.TOKEN_MINTER_SERVICE_URL }}'
+          requested_permissions: |-
+            {
+              "scope": "release",
+              "repositories": ["${{ github.event.repository.name }}"],
+              "permissions": {
+                "contents": "write"
+              }
+            }
+
+      - name: 'Cleanup failed release'
+        env:
+          GH_TOKEN: '${{ steps.mint-token.outputs.token }}'
+          RELEASE_VERSION: 'v${{ needs.create-release.outputs.version }}'
+          REPO: '${{ github.repository }}'
+        run: |-
+          gh release delete "${RELEASE_VERSION}" \
+            --repo "${REPO}" \
+            --yes
