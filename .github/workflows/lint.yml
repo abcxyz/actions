@@ -43,7 +43,7 @@ jobs:
         shell: 'bash'
         run: |-
           declare -a TARGETS=()
-          if git ls-tree -r --name-only "$REF" | LC_ALL=C grep --with-filename -E '(go.mod|/.*\.go$)' >/dev/null; then
+          if git ls-tree -r --name-only "$REF" | LC_ALL=C grep --with-filename -E '(go.mod$|/.*\.go$)' >/dev/null; then
             TARGETS+=("golang" "golang-modules")
           fi
           if git ls-tree -r --name-only "$REF" | LC_ALL=C grep --with-filename -E '.*\.(java)$' >/dev/null; then

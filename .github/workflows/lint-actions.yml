@@ -50,7 +50,7 @@ jobs:
         shell: 'bash'
         run: |-
           declare -a TARGETS=()
-          if git ls-tree -r --name-only "$REF" | LC_ALL=C grep --with-filename -E '(go.mod|/.*\.go$)' >/dev/null; then
+          if git ls-tree -r --name-only "$REF" | LC_ALL=C grep --with-filename -E '(go.mod$|/.*\.go$)' >/dev/null; then
             TARGETS+=("golang" "golang-modules")
           fi
           if git ls-tree -r --name-only "$REF" | LC_ALL=C grep --with-filename -E '.*\.(java)$' >/dev/null; then
@@ -102,7 +102,7 @@ jobs:
         ${{ vars.GO_LINT_GO_VERSION_FILE || 'go.mod' }}
       # The URL to a golangci file. This is only used if no file is found in the local directory.
       GO_LINT_GOLANGCI_URL: |-
-        ${{ vars.GO_LINT_GOLANGCI_URL || 'https://raw.githubusercontent.com/abcxyz/actions/main/default.golangci.yml' }}
+        ${{ vars.GO_LINT_GOLANGCI_URL || 'https://raw.githubusercontent.com/abcxyz/actions/${{ github.ref }}/.golangci.yml' }}
       # Directory in which Go files reside.
       GO_LINT_DIRECTORY: |-
         ${{ vars.GO_LINT_DIRECTORY || '.' }}
@@ -141,7 +141,7 @@ jobs:
       ##############
       # The URL to a yamllint config file. This is only used if no file is found in the local directory.
       YAML_LINT_YAMLLINT_URL: |-
-        ${{ vars.YAML_LINT_YAMLLINT_URL || 'https://raw.githubusercontent.com/abcxyz/actions/main/.yamllint.yml' }}
+        ${{ vars.YAML_LINT_YAMLLINT_URL || 'https://raw.githubusercontent.com/abcxyz/actions/${{ github.ref }}/.yamllint.yml' }}
       # Version of yamllint linter to use
       YAML_LINT_YAMLLINT_VERSION: |-
         ${{ vars.YAML_LINT_YAMLLINT_VERSION || '1.32.0' }}

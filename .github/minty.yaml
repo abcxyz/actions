@@ -4,7 +4,7 @@ rule:
   if: |-
     assertion.iss == issuers.github &&
     assertion.repository_owner_id == '93787867' &&
-    assertion.repository_id == '493022865' &&
+    assertion.repository_id == '966875030' &&
     assertion.workflow_ref == assertion.job_workflow_ref &&
     assertion.ref == 'refs/heads/main'
 
@@ -15,7 +15,7 @@ scope:
         assertion.workflow_ref.startsWith('abcxyz/actions/.github/workflows/draft-release.yml') &&
         assertion.event_name == 'workflow_dispatch'
     repositories:
-      - 'pkg'
+      - 'actions'
     permissions:
       contents: 'write'
       pull_requests: 'write'
@@ -26,6 +26,6 @@ scope:
         assertion.job_workflow_ref.startsWith('abcxyz/actions/.github/workflows/release.yml') &&
         assertion.event_name == 'push'
     repositories:
-      - 'pkg'
+      - 'actions'
     permissions:
       contents: 'write'
