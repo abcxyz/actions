@@ -74,7 +74,7 @@ runs:
           echo "::group::${DIR}"
 
           pushd "${DIR}" &>/dev/null
-          terraform init -backend=false -input=false
+          terraform init -backend=false -input=false -get=false
           terraform validate
           popd &>/dev/null
 
@@ -86,7 +86,7 @@ runs:
       shell: 'bash'
       working-directory: '${{ inputs.directory }}'
       run: |-
-        terraform init -backend=false -input=false
+        terraform init -backend=false -input=false -get=false
         terraform validate
 
     - name: 'abcxyz Terraform linter'
