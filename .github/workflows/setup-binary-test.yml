@@ -18,6 +18,7 @@ on:
   pull_request:
     paths:
       - '.github/actions/setup-binary/**'
+      - '.github/workflows/setup-binary-test.yml'
 
 jobs:
   setup-binary-test:
@@ -79,7 +80,7 @@ jobs:
         shell: 'bash'
         run: |
           renamed_ratchet -version
-          GOT=$(renamed_ratchet -version 2>&1) # abcxyz/actions/cli writes help to stderr
+          GOT=$(renamed_ratchet -version 2>&1) # abcxyz/pkg/cli writes help to stderr
           WANT="ratchet 0.6.0"
 
           if [[ "${GOT}" != "${WANT}"* ]]; then
