@@ -1,0 +1,64 @@
+# Copyright 2023 The Authors (see AUTHORS file)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: 'terraform-lint'
+
+on:
+  workflow_call:
+    inputs:
+      runs-on:
+        description: 'The GitHub runner on which to execute. This must be a valid JSON but can represent a string, array of strings, or object.'
+        type: 'string'
+        default: '"ubuntu-latest"'
+      terraform_version:
+        description: 'The version of Terraform to install and use.'
+        type: 'string'
+        required: true
+      directory:
+        description: 'The directory upon which to lint Terraform configurations.'
+        type: 'string'
+        required: true
+      walk_dirs:
+        description: 'Recursively iteratate the working directory to initialize and validate all child modules.'
+        type: 'boolean'
+        required: false
+        default: true
+      ignored_walk_dirs:
+        description: 'The newline delimited list of directories to ignore when recursively iterating child modules. This input accepts bash globbing.'
+        type: 'string'
+        required: false
+        default: ''
+
+env:
+  TF_IN_AUTOMATION: 'true'
+
+jobs:
+  # lint finds all Terraform nested directories within the given parent
+  # directory and runs Terraform formatting and validation checks.
+  #
+  # Do not change this job name. Job names are used as identifiers in status
+  # checks, and changing this name will cause status checks to fail.
+  lint:
+    runs-on: ${{ fromJSON(inputs.runs-on) }} # yamllint disable-line
+    steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+
+      - name: 'Lint Terraform'
+        uses: 'abcxyz/actions/.github/actions/lint-terraform@main' # ratchet:exclude
+        with:
+          terraform_version: '${{ inputs.terraform_version }}'
+          directory: '${{ inputs.directory }}'
+          walk_dirs: '${{ inputs.walk_dirs }}'
+          ignored_walk_dirs: '${{ inputs.ignored_walk_dirs }}'
