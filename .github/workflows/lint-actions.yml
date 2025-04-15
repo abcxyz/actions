@@ -102,7 +102,7 @@ jobs:
         ${{ vars.GO_LINT_GO_VERSION_FILE || 'go.mod' }}
       # The URL to a golangci file. This is only used if no file is found in the local directory.
       GO_LINT_GOLANGCI_URL: |-
-        ${{ vars.GO_LINT_GOLANGCI_URL || 'https://raw.githubusercontent.com/abcxyz/actions/${{ github.ref }}/.golangci.yml' }}
+        ${{ vars.GO_LINT_GOLANGCI_URL || format('https://raw.githubusercontent.com/abcxyz/actions/{0}/.golangci.yml', github.ref) }}
       # Directory in which Go files reside.
       GO_LINT_DIRECTORY: |-
         ${{ vars.GO_LINT_DIRECTORY || '.' }}
@@ -141,7 +141,7 @@ jobs:
       ##############
       # The URL to a yamllint config file. This is only used if no file is found in the local directory.
       YAML_LINT_YAMLLINT_URL: |-
-        ${{ vars.YAML_LINT_YAMLLINT_URL || 'https://raw.githubusercontent.com/abcxyz/actions/${{ github.ref }}/.yamllint.yml' }}
+        ${{ vars.YAML_LINT_YAMLLINT_URL || format('https://raw.githubusercontent.com/abcxyz/actions/{0}/.yamllint.yml', github.ref) }}
       # Version of yamllint linter to use
       YAML_LINT_YAMLLINT_VERSION: |-
         ${{ vars.YAML_LINT_YAMLLINT_VERSION || '1.32.0' }}
