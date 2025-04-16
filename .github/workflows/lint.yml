@@ -14,6 +14,8 @@
 
 name: 'lint'
 
+# NOTE: This workflow is intended to be a reusable workflow. It is configured
+# via organization rulesets as a required workflow.
 on:
   pull_request:
   merge_group:
