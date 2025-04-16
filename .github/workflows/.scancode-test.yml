@@ -17,9 +17,10 @@ name: 'scancode-test'
 on:
   pull_request:
     paths:
-      - '.github/actions/scancode'
+      - '.github/actions/scancode/**'
       - '.github/workflows/.scancode-test.yml'
-  
+      - 'scancode/**'
+
 concurrency:
   group: '${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}'
   cancel-in-progress: true
