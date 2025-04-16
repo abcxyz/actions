@@ -35,7 +35,7 @@ runs:
         binary_subpath: 'actionlint'
         cache_key: '${{ runner.os }}_${{ runner.arch }}_actionlint_${{ inputs.actionlint_version }}'
         add_to_path: true
-        
+
     - name: 'Add matcher'
       shell: 'bash'
       run: |
@@ -57,4 +57,4 @@ runs:
     - name: 'Actionlint'
       shell: 'bash'
       run: |
-        actionlint
+        actionlint -color
