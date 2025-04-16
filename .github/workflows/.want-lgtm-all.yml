@@ -42,4 +42,4 @@ env:
 
 jobs:
   want-lgtm-all:
-    uses: '.github/workflows/want-lgtm-all.yml' # ratchet:exclude
+    uses: './.github/workflows/want-lgtm-all.yml' # ratchet:exclude
