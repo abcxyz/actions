@@ -15,19 +15,6 @@
 name: 'want-lgtm-all'
 
 on:
-  pull_request:
-    types:
-      - 'opened'
-      - 'edited'
-      - 'reopened'
-      - 'synchronize'
-      - 'ready_for_review'
-      - 'review_requested'
-      - 'review_request_removed'
-  pull_request_review:
-    types:
-      - 'submitted'
-      - 'dismissed'
   workflow_call:
 
 concurrency:

@@ -14,6 +14,11 @@
 
 name: 'lint'
 
+# NOTE: This workflow is NOT intended to be a reusable workflow via
+# workflow_call. Instead it will be "reused" by configuring via organization
+# rulesets as a required workflow. As such, this workflow follows the naming
+# convention for other workflow_call-able workflows in the abcxyz/actions
+# respository.
 on:
   pull_request:
   merge_group:
