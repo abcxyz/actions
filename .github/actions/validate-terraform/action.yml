@@ -12,15 +12,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: 'lint-terraform'
-description: 'Lint terraform against the abcxyz style guide.'
+name: 'validate-terraform'
+description: 'Validate terraform entrypoints.'
 inputs:
   terraform_version:
     description: 'The version of Terraform to install and use.'
     type: 'string'
     required: true
   directory:
-    description: 'The directory upon which to lint Terraform configurations.'
+    description: 'The directory upon which to validate Terraform configurations.'
     type: 'string'
     required: true
   walk_dirs:
@@ -41,12 +41,6 @@ runs:
       uses: 'hashicorp/setup-terraform@b9cd54a3c349d3f38e8881555d616ced269862dd' # ratchet:hashicorp/setup-terraform@v3.1.2
       with:
         terraform_version: '${{ inputs.terraform_version }}'
-
-    - name: 'Check formatting'
-      shell: 'bash'
-      working-directory: '${{ inputs.directory }}'
-      run: |-
-        terraform fmt -recursive -check -diff
 
     - name: 'Initialize and validate sub directories'
       if: '${{ inputs.walk_dirs }}'
@@ -88,8 +82,3 @@ runs:
       run: |-
         terraform init -backend=false -input=false
         terraform validate
-
-    - name: 'abcxyz Terraform linter'
-      uses: 'abcxyz/terraform-linter@main' # ratchet:exclude
-      with:
-        paths: '${{ inputs.directory }}'
