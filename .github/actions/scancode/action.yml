@@ -15,7 +15,7 @@
 name: 'Scancode'
 description: 'Scan licenses and copyrights in code'
 inputs:
-  directory-to-scan:
+  directory_to_scan:
     description: 'Which directory in the repository to scan.'
     required: false
     default: '.'
@@ -28,4 +28,4 @@ runs:
   using: 'docker'
   image: '../../../scancode/Dockerfile'
   args:
-    - '${{ inputs.directory-to-scan }}'
+    - '${{ inputs.directory_to_scan }}'
