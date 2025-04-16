@@ -19,10 +19,6 @@ inputs:
     description: 'The version of actionlint to install and use.'
     type: 'string'
     default: '1.7.7'
-  actionlint_matcher_url:
-    decription: 'The actionlint matcher to use for github comments.'
-    type: 'string'
-    default: 'https://raw.githubusercontent.com/abcxyz/actions/main/actionlint-matcher.json'
 
 runs:
   using: 'composite'
@@ -36,25 +32,7 @@ runs:
         cache_key: '${{ runner.os }}_${{ runner.arch }}_actionlint_${{ inputs.actionlint_version }}'
         add_to_path: true
 
-    - name: 'Add matcher'
-      shell: 'bash'
-      run: |
-        # Create a unique output file outside of the checkout.
-        ACTIONLINT_MATCHER_JSON="${RUNNER_TEMP}/${GITHUB_SHA:0:7}.actionlint-matcher.json"
-
-        # Download the file, passing in authentication to get a higher rate
-        # limit: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limits-for-requests-from-github-actions
-        curl "${{ inputs.actionlint_matcher_url }}" \
-          --silent \
-          --fail \
-          --location \
-          --header "Authorization: Token ${{ github.token }}" \
-          --output "${ACTIONLINT_MATCHER_JSON}"
-
-        matcher=".github/actionlint-matcher.json"
-        echo "::add-matcher::$ACTIONLINT_MATCHER_JSON"
-
     - name: 'Actionlint'
       shell: 'bash'
       run: |
-        actionlint -color
+        actionlint -color -format '{{range $err := .}}::error file={{$err.Filepath}},line={{$err.Line}},col={{$err.Column}}::{{$err.Message}}%0A```%0A{{replace $err.Snippet "\\n" "%0A"}}%0A```\n{{end}}' -ignore 'SC2016:'
