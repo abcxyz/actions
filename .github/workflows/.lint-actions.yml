@@ -38,7 +38,7 @@ jobs:
       lint-targets: '${{ steps.lint-targets.outputs.lint-targets }}'
     steps:
       - name: 'Checkout'
-        uses: 'actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332' # ratchet:actions/checkout@v4
+        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
         with:
           fetch-depth: 1 # shallow checkout
           ref: '${{ github.event.pull_request.head.sha }}'
@@ -77,7 +77,7 @@ jobs:
 
   lint:
     runs-on: |-
-     ${{ vars.LINT_RUNS_ON || 'ubuntu-latest' }}
+      ${{ vars.LINT_RUNS_ON || 'ubuntu-latest' }}
     needs:
       - 'init'
     if: |
@@ -147,14 +147,14 @@ jobs:
 
     steps:
       - name: 'Checkout'
-        uses: 'actions/checkout@692973e3d937129bcbf40652eb9f2f61becf3332' # ratchet:actions/checkout@v4
+        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
         with:
           fetch-depth: 1 # shallow clone
 
       - name: '[GOLANG] Lint Go'
         if: |
           matrix.lint-target == 'golang'
-        uses: './.github/actions/lint-go'
+        uses: './.github/actions/lint-go' # ratchet:exclude
         with:
           go_version: '${{ env.GO_LINT_GO_VERSION }}'
           go_version_file: '${{ env.GO_LINT_GO_VERSION_FILE }}'
@@ -165,7 +165,7 @@ jobs:
       - name: '[GOLANG] Lint Go modules'
         if: |
           matrix.lint-target == 'golang-modules'
-        uses: './.github/actions/lint-go-modules'
+        uses: './.github/actions/lint-go-modules' # ratchet:exclude
         with:
           go_version: '${{ env.GO_LINT_GO_VERSION }}'
           go_version_file: '${{ env.GO_LINT_GO_VERSION_FILE }}'
@@ -176,7 +176,7 @@ jobs:
       - name: '[JAVA] Lint Java'
         if: |
           matrix.lint-target == 'java'
-        uses: './.github/actions/lint-java'
+        uses: './.github/actions/lint-java' # ratchet:exclude
         with:
           java_version: '${{ env.JAVA_LINT_JAVA_VERSION }}'
           java_distribution: '${{ env.JAVA_LINT_JAVA_DISTRIBUTION }}'
@@ -198,14 +198,14 @@ jobs:
       - name: '[SHELL] Lint Shell'
         if: |
           matrix.lint-target == 'shell'
-        uses: './.github/actions/lint-shell'
+        uses: './.github/actions/lint-shell' # ratchet:exclude
         with:
           target: '${{ env.LINT_SHELL_TARGET }}'
 
       - name: '[TERRAFORM] Lint Terraform'
         if: |
           matrix.lint-target == 'terraform'
-        uses: './.github/actions/lint-terraform'
+        uses: './.github/actions/lint-terraform' # ratchet:exclude
         with:
           terraform_version: '${{ env.TERRAFORM_LINT_TERRAFORM_VERSION }}'
           directory: '${{ env.TERRAFORM_LINT_DIRECTORY }}'
@@ -213,7 +213,7 @@ jobs:
       - name: '[YAML] lint yaml'
         if: |
           matrix.lint-target == 'yaml'
-        uses: './.github/actions/lint-yaml'
+        uses: './.github/actions/lint-yaml' # ratchet:exclude
         with:
           yamllint_url: '${{ env.YAML_LINT_YAMLLINT_URL }}'
           yamllint_version: '${{ env.YAML_LINT_YAMLLINT_VERSION }}'
