@@ -36,7 +36,7 @@ jobs:
       lint-targets: '${{ steps.lint-targets.outputs.lint-targets }}'
     steps:
       - name: 'Checkout'
-        uses: 'actions/checkout@123' # ratchet:actions/checkout@v4
+        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
         with:
           fetch-depth: 1 # shallow checkout
           ref: '${{ github.event.pull_request.head.sha }}'
