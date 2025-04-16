@@ -223,8 +223,9 @@ jobs:
           yamllint_version: '${{ env.YAML_LINT_YAMLLINT_VERSION }}'
           target: '${{ env.YAML_LINT_TARGET }}'
 
-      - uses: 'sethvargo/ratchet@main' # ratchet:exclude
+      - name: '[GITHUB] Ratchet lint'
         if: |
           matrix.lint-target == 'ratchet'
+        uses: 'sethvargo/ratchet@main' # ratchet:exclude
         with:
           files: './.github/(actions|workflows)/**/(.*|*).yml'
