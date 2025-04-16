@@ -228,4 +228,4 @@ jobs:
           matrix.lint-target == 'ratchet'
         uses: 'sethvargo/ratchet@main' # ratchet:exclude
         with:
-          files: './.github/(actions|workflows)/**/(.*|*).yml'
+          files: './.github/(actions|workflows)/**/*.yml'
