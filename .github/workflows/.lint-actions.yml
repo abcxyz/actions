@@ -152,6 +152,8 @@ jobs:
       ##############
       GITHUB_LINT_ACTIONLINT_VERSION: |-
         ${{ vars.GITHUB_LINT_ACTIONLINT_VERSION || '1.7.7' }}
+      GITHUB_LINT_ACTIONLINT_MATCHER_URL: |-
+        ${{ format('https://raw.githubusercontent.com/abcxyz/actions/{0}/actionlint-matcher.json', github.sha) }}
 
     steps:
       - name: 'Checkout'
@@ -240,4 +242,4 @@ jobs:
         uses: './.github/actions/lint-github-actions' # ratchet:exclude
         with:
           actionlint_version: '${{ env.GITHUB_LINT_ACTIONLINT_VERSION }}'
-
+          actionlint_matcher_url: '${{ env.GITHUB_LINT_ACTIONLINT_MATCHER_URL }}'
