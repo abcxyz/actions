@@ -23,16 +23,6 @@ inputs:
     description: 'The directory upon which to lint Terraform configurations.'
     type: 'string'
     required: true
-  walk_dirs:
-    description: 'Recursively iteratate the working directory to initialize and validate all child modules.'
-    type: 'boolean'
-    required: false
-    default: true
-  ignored_walk_dirs:
-    description: 'The newline delimited list of directories to ignore when recursively iterating child modules. This input accepts bash globbing.'
-    type: 'string'
-    required: false
-    default: ''
 
 runs:
   using: 'composite'
@@ -47,47 +37,6 @@ runs:
       working-directory: '${{ inputs.directory }}'
       run: |-
         terraform fmt -recursive -check -diff
-
-    - name: 'Initialize and validate sub directories'
-      if: '${{ inputs.walk_dirs }}'
-      shell: 'bash'
-      working-directory: '${{ inputs.directory }}'
-      env:
-        IGNORE_DIRS: '${{ inputs.ignored_walk_dirs }}'
-      run: |-
-        TERRAFORM_DIRS="$(find . -name '*.tf' -printf "%h\n" | sort -u | tr '\n' ' ')"
-
-        for DIR in ${TERRAFORM_DIRS}; do
-          IGNORE=false
-          for IGNORE_DIR in ${IGNORE_DIRS}; do
-            if [[ "${DIR}" == $IGNORE_DIR ]]; then
-              IGNORE=true
-              break
-            fi
-          done
-
-          if [[ "${IGNORE}" == "true" ]]; then
-            echo "IGNORE: ${DIR}"
-            continue
-          fi
-
-          echo "::group::${DIR}"
-
-          pushd "${DIR}" &>/dev/null
-          terraform init -backend=false -input=false
-          terraform validate
-          popd &>/dev/null
-
-          echo "::endgroup::"
-        done
-
-    - name: 'Initialize and validate'
-      if: '${{ !inputs.walk_dirs }}'
-      shell: 'bash'
-      working-directory: '${{ inputs.directory }}'
-      run: |-
-        terraform init -backend=false -input=false
-        terraform validate
 
     - name: 'abcxyz Terraform linter'
       uses: 'abcxyz/terraform-linter@main' # ratchet:exclude

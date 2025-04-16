@@ -130,10 +130,6 @@ jobs:
         ${{ vars.TERRAFORM_LINT_TERRAFORM_VERSION }}
       TERRAFORM_LINT_DIRECTORY: |-
         ${{ vars.TERRAFORM_LINT_DIRECTORY || 'terraform' }}
-      TERRAFORM_LINT_WALK_DIRS: |-
-        ${{ vars.TERRAFORM_LINT_WALK_DIRS || true }}
-      TERRAFORM_LINT_IGNORED_WALK_DIRS: |-
-        ${{ vars.TERRAFORM_LINT_IGNORED_WALK_DIRS || '' }}
       ##############
       ## YAML ######
       ##############
@@ -211,8 +207,6 @@ jobs:
         with:
           terraform_version: '${{ env.TERRAFORM_LINT_TERRAFORM_VERSION }}'
           directory: '${{ env.TERRAFORM_LINT_DIRECTORY }}'
-          walk_dirs: '${{ env.TERRAFORM_LINT_WALK_DIRS }}'
-          ignored_walk_dirs: '${{ env.TERRAFORM_LINT_IGNORED_WALK_DIRS }}'
 
       - name: '[YAML] lint yaml'
         if: |
