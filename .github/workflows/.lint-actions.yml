@@ -71,6 +71,10 @@ jobs:
           if git ls-tree -r --name-only "$REF" | LC_ALL=C grep --with-filename -E '.*\.(yaml|yml)$' >/dev/null; then
             TARGETS+=("yaml")
           fi
+          if git ls-tree -r --name-only "$REF" | LC_ALL=C grep --with-filename -E '.github/(actions|workflows)/.*\.(yaml|yml)$' >/dev/null; then
+            TARGETS+=("ratchet")
+          fi
+
           LINT_TARGETS="$(jq --compact-output --null-input '$ARGS.positional' --args -- "${TARGETS[@]}")"
           echo "lint-targets -> ${LINT_TARGETS}"
           echo "lint-targets=${LINT_TARGETS}" >> $GITHUB_OUTPUT
@@ -218,3 +222,10 @@ jobs:
           yamllint_url: '${{ env.YAML_LINT_YAMLLINT_URL }}'
           yamllint_version: '${{ env.YAML_LINT_YAMLLINT_VERSION }}'
           target: '${{ env.YAML_LINT_TARGET }}'
+
+      - name: '[GITHUB] Ratchet lint'
+        if: |
+          matrix.lint-target == 'ratchet'
+        uses: 'sethvargo/ratchet@main' # ratchet:exclude
+        with:
+          files: './.github/actions/**/*.yml ./.github/workflows/*.yml'
