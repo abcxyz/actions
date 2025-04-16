@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: 'want-lgtm-all'
+name: 'approvals'
 
 on:
   pull_request:
@@ -41,5 +41,5 @@ env:
   TAGREP_VERSION: '0.0.7'
 
 jobs:
-  want-lgtm-all:
+  check:
     uses: './.github/workflows/want-lgtm-all.yml' # ratchet:exclude
