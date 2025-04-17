@@ -83,7 +83,7 @@ jobs:
           fi
           LINT_TARGETS="$(jq --compact-output --null-input '$ARGS.positional' --args -- "${TARGETS[@]}")"
           echo "lint-targets -> ${LINT_TARGETS}"
-          echo "lint-targets=${LINT_TARGETS}" >> $GITHUB_OUTPUT
+          echo "lint-targets=${LINT_TARGETS}" >> "${GITHUB_OUTPUT}"
 
   lint:
     runs-on: |-
