@@ -79,7 +79,7 @@ jobs:
             FAILURES="true"
           fi
 
-          if [[ ! -z "${FAILURES}" ]]; then
+          if [[ -n "${FAILURES}" ]]; then
             exit 1
           fi
 
@@ -106,7 +106,7 @@ jobs:
             exit 1
           fi
 
-          echo "LIST_OVERRIDE_VALUE=wrong/value" >> $GITHUB_ENV
+          echo "LIST_OVERRIDE_VALUE=wrong/value" >> "$GITHUB_ENV"
 
       - name: 'Load Env Vars'
         uses: './.github/actions/load-workflow-variables' # ratchet:exclude

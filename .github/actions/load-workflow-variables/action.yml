@@ -91,7 +91,7 @@ runs:
                 SEARCH_DIR="${WORKING_DIRECTORY}/*"
                 FOUND=$(echo "${JSON}" | jq -r ".[] | select(.dirs[] | select(. == \"$SEARCH_DIR\"))")
 
-                if [[ ! -z "${FOUND}" ]]; then
+                if [[ -n "${FOUND}" ]]; then
                     echo "FOUND       Found match for ${SEARCH_DIR}"
                     break
                 fi
