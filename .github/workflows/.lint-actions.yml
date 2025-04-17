@@ -50,29 +50,37 @@ jobs:
           LC_ALL: 'C'
         shell: 'bash'
         run: |-
+          # match_files determines if the current git repository has any files
+          # matching the given pattern. This has been performance tested
+          # against a shallow checkout of chromium (future changes should be
+          # tested in the same manner).
+          match_files() {
+            local filepattern="${1}"
+            git ls-tree -r --name-only "$REF" | grep -m 1 -E "$filepattern" >/dev/null
+          }
           declare -a TARGETS=()
-          if git ls-tree -r --name-only "$REF" | grep --with-filename -E '(go.mod$|/.*\.go$)' >/dev/null; then
+          if match_files '(go.mod$|/.*\.go$)'; then
             TARGETS+=("golang" "golang-modules")
           fi
-          if git ls-tree -r --name-only "$REF" | grep --with-filename -E '.*\.(java)$' >/dev/null; then
+          if match_files '.*\.(java)$'; then
             TARGETS+=("java")
           fi
-          if git ls-tree -r --name-only "$REF" | grep --with-filename -E '.*\.(js)$' >/dev/null; then
+          if match_files '.*\.(js)$'; then
             TARGETS+=("javascript")
           fi
-          if git ls-tree -r --name-only "$REF" | grep --with-filename -E '.*\.(ts)$' >/dev/null; then
+          if match_files '.*\.(ts)$'; then
             TARGETS+=("typescript")
           fi
-          if git ls-tree -r --name-only "$REF" | grep --with-filename -E '.*\.(sh)$' >/dev/null; then
+          if match_files '.*\.(sh)$'; then
             TARGETS+=("shell")
           fi
-          if git ls-tree -r --name-only "$REF" | grep --with-filename -E '.*\.(tf)$' >/dev/null; then
+          if match_files '.*\.(tf)$'; then
             TARGETS+=("terraform")
           fi
-          if git ls-tree -r --name-only "$REF" | grep --with-filename -E '.*\.(yaml|yml)$' >/dev/null; then
+          if match_files '.*\.(yaml|yml)$'; then
             TARGETS+=("yaml")
           fi
-          if git ls-tree -r --name-only "$REF" | grep --with-filename -E '.github/(actions|workflows)/.*\.(yaml|yml)$' >/dev/null; then
+          if match_files '.github/(actions|workflows)/.*\.(yaml|yml)$'; then
             TARGETS+=("github" "ratchet")
           fi
           LINT_TARGETS="$(jq --compact-output --null-input '$ARGS.positional' --args -- "${TARGETS[@]}")"
