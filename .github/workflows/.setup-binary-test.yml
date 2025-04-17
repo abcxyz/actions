@@ -52,7 +52,7 @@ jobs:
           if [ "${{ matrix.os }}" = "windows-latest" ]; then
             powershell 'echo "path=${HOME}\.ratchet" >> $env:GITHUB_OUTPUT'
           else
-            echo "path=${HOME}/.ratchet" >> "$GITHUB_OUTPUT"
+            echo "path=${HOME}/.ratchet" >> "${GITHUB_OUTPUT}"
           fi
           echo "install_path: ${HOME}/.ratchet"
 

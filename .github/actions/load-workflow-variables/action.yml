@@ -42,9 +42,9 @@ runs:
       env:
         CONFIG_REL_PATH: '${{ inputs.filepath }}'
       run: |-
-        relpath=${CONFIG_REL_PATH}
-        filepath=$(echo "$relpath" | sed 's/^\.\///')
-        echo "CONFIG_PATH=$filepath" >> "$GITHUB_OUTPUT"
+        relpath="${CONFIG_REL_PATH}"
+        filepath="$(echo "${relpath}" | sed 's/^\.\///')"
+        echo "CONFIG_PATH=${filepath}" >> "${GITHUB_OUTPUT}"
 
     - name: 'Get Approved Configuration File'
       uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
@@ -80,7 +80,7 @@ runs:
         JSON=$(yq -o=json < "${FILEPATH}")
 
         # Look for exact match on working directory
-        FOUND=$(echo "${JSON}" | jq -r ".[] | select(.dirs[] | select(. == \"$WORKING_DIRECTORY\"))")
+        FOUND=$(echo "${JSON}" | jq -r ".[] | select(.dirs[] | select(. == \"${WORKING_DIRECTORY}\"))")
 
         if [[ -z "${FOUND}" ]]; then
             echo "NOT FOUND   No exact match for ${WORKING_DIRECTORY}"
@@ -89,7 +89,7 @@ runs:
             while [[ "${WORKING_DIRECTORY}" != "/" && "${WORKING_DIRECTORY}" != "." && "${WORKING_DIRECTORY}" != "" ]]; do
                 WORKING_DIRECTORY=$(dirname "${WORKING_DIRECTORY}")
                 SEARCH_DIR="${WORKING_DIRECTORY}/*"
-                FOUND=$(echo "${JSON}" | jq -r ".[] | select(.dirs[] | select(. == \"$SEARCH_DIR\"))")
+                FOUND=$(echo "${JSON}" | jq -r ".[] | select(.dirs[] | select(. == \"${SEARCH_DIR}\"))")
 
                 if [[ -n "${FOUND}" ]]; then
                     echo "FOUND       Found match for ${SEARCH_DIR}"
@@ -112,5 +112,5 @@ runs:
             fi
         else
             VARS=$(echo "${FOUND}" | jq -r '.variables | to_entries | .[] | .key + "<<EOT\n" + .value + "\nEOT"')
-            echo "${VARS}" >> $GITHUB_ENV
+            echo "${VARS}" >> "${GITHUB_ENV}"
         fi

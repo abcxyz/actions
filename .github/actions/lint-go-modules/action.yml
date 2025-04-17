@@ -49,7 +49,7 @@ runs:
       working-directory: '${{ inputs.directory }}'
       run: |-
         for d in $(find . -name go.mod); do
-          (cd $(dirname $d) && go mod tidy)
+          (cd "$(dirname "${d}")" && go mod tidy)
         done
         if [ -n "$(git status -s -uall)" ]; then
           echo "::error title=Go module changes::Detected go module changes"

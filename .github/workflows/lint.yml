@@ -54,7 +54,7 @@ jobs:
           # tested in the same manner).
           match_files() {
             local filepattern="${1}"
-            git ls-tree -r --name-only "$REF" | grep -m 1 -E "$filepattern" >/dev/null
+            git ls-tree -r --name-only "${REF}" | grep -m 1 -E "${filepattern}" >/dev/null
           }
           declare -a TARGETS=()
           if match_files '(go.mod$|/.*\.go$)'; then
@@ -83,7 +83,7 @@ jobs:
           fi
           LINT_TARGETS="$(jq --compact-output --null-input '$ARGS.positional' --args -- "${TARGETS[@]}")"
           echo "lint-targets -> ${LINT_TARGETS}"
-          echo "lint-targets=${LINT_TARGETS}" >> "$GITHUB_OUTPUT"
+          echo "lint-targets=${LINT_TARGETS}" >> "${GITHUB_OUTPUT}"
 
   lint:
     runs-on: |-

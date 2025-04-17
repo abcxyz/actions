@@ -72,7 +72,7 @@ runs:
           echo "::error ::binary_subpath is a required input"
         fi
 
-        if [ "$errors" = true ]; then
+        if [ "${errors}" = true ]; then
           exit 1
         fi
 
@@ -120,7 +120,7 @@ runs:
           unzip go-getter.zip
         fi
 
-        echo "path=${TEMP_DIR}" >> $GITHUB_OUTPUT
+        echo "path=${TEMP_DIR}" >> "${GITHUB_OUTPUT}"
 
     - name: 'Download binary'
       if: |
@@ -177,7 +177,7 @@ runs:
         fi
         BINARY_DIR=$(dirname ${INSTALL_PATH}/${BINARY_SUBPATH})
         echo "Adding ${BINARY_DIR} to PATH"
-        echo "${BINARY_DIR}" >> $GITHUB_PATH
+        echo "${BINARY_DIR}" >> "${GITHUB_PATH}"
 
     - name: 'Mark binary as executable'
       shell: 'bash'
