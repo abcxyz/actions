@@ -54,7 +54,7 @@ runs:
         for DIR in ${TERRAFORM_DIRS}; do
           IGNORE=false
           for IGNORE_DIR in ${IGNORE_DIRS}; do
-            if [[ "${DIR}" == $IGNORE_DIR ]]; then
+            if [[ "${DIR}" == "${IGNORE_DIR}" ]]; then
               IGNORE=true
               break
             fi

@@ -128,7 +128,7 @@ jobs:
             echo "- branch: ${BRANCH}"
             echo "- annotated tag: ${ANNOTATED_TAG}"
             echo "- message: ${MESSAGE}"
-          } >> "$GITHUB_STEP_SUMMARY"
+          } >> "${GITHUB_STEP_SUMMARY}"
 
   create-tag:
     runs-on: ${{ fromJSON(inputs.runs-on) }} # yamllint disable-line
@@ -228,5 +228,5 @@ jobs:
     steps:
       - name: 'job summary'
         run: |
-          echo "### Outputs" >> "$GITHUB_STEP_SUMMARY"
-          echo "${{ needs.create-tag.outputs.result }}" >> "$GITHUB_STEP_SUMMARY"
+          echo "### Outputs" >> "${GITHUB_STEP_SUMMARY}"
+          echo "${{ needs.create-tag.outputs.result }}" >> "${GITHUB_STEP_SUMMARY}"

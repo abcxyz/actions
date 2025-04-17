@@ -53,8 +53,8 @@ jobs:
         run: |
           tags="$(tagrep parse -type=request -format=raw -string-tags=WANT_LGTM 2> tagrep.log)"
           cat tagrep.log
-          echo "tags -> $tags"
-          echo "$tags" >> "$GITHUB_ENV"
+          echo "tags -> ${tags}"
+          echo "${tags}" >> "${GITHUB_ENV}"
 
       - id: 'want-lgtm'
         name: 'Validate Reviews'
