@@ -239,7 +239,7 @@ jobs:
       - name: '[GITHUB] lint ratchet'
         if: |
           matrix.lint-target == 'ratchet'
-        uses: 'sethvargo/ratchet@main' # ratchet:exclude
+        uses: 'sethvargo/ratchet@db1c14407c5a1cac5ff7b956ce3b6fd8cbafd4ef' # ratchet:sethvargo/ratchet@main
         with:
           files: './.github/actions/**/*.yml ./.github/workflows/*.yml'
 
