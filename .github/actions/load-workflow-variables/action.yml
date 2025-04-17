@@ -42,8 +42,8 @@ runs:
       env:
         CONFIG_REL_PATH: '${{ inputs.filepath }}'
       run: |-
-        relpath=${CONFIG_REL_PATH}
-        filepath=$(echo "${relpath}" | sed 's/^\.\///')
+        relpath="${CONFIG_REL_PATH}"
+        filepath="$(echo "${relpath}" | sed 's/^\.\///')"
         echo "CONFIG_PATH=${filepath}" >> "${GITHUB_OUTPUT}"
 
     - name: 'Get Approved Configuration File'
