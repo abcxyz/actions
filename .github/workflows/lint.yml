@@ -79,7 +79,7 @@ jobs:
             TARGETS+=("yaml")
           fi
           if match_files '.github/(actions|workflows)/.*\.(yaml|yml)$'; then
-            TARGETS+=()
+            TARGETS+=("github" "ratchet")
           fi
           LINT_TARGETS="$(jq --compact-output --null-input '$ARGS.positional' --args -- "${TARGETS[@]}")"
           echo "lint-targets -> ${LINT_TARGETS}"
@@ -154,6 +154,13 @@ jobs:
       # File or directory containing YAML files to lint.
       YAML_LINT_TARGET: |-
         ${{ vars.YAML_LINT_TARGET || '.' }}
+      ##############
+      ## GITHUB ####
+      ##############
+      # Note, must not start with GITHUB_
+      # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#naming-conventions-for-configuration-variables
+      ACTIONS_LINT_ACTIONLINT_VERSION: |-
+        ${{ vars.ACTIONS_LINT_ACTIONLINT_VERSION || '1.7.7' }}
 
     steps:
       - name: 'Checkout'
@@ -228,3 +235,17 @@ jobs:
           yamllint_url: '${{ env.YAML_LINT_YAMLLINT_URL }}'
           yamllint_version: '${{ env.YAML_LINT_YAMLLINT_VERSION }}'
           target: '${{ env.YAML_LINT_TARGET }}'
+
+      - name: '[GITHUB] lint ratchet'
+        if: |
+          matrix.lint-target == 'ratchet'
+        uses: 'sethvargo/ratchet@db1c14407c5a1cac5ff7b956ce3b6fd8cbafd4ef' # ratchet:sethvargo/ratchet@main
+        with:
+          files: './.github/actions/**/*.yml ./.github/workflows/*.yml'
+
+      - name: '[GITHUB] lint actions'
+        if: |
+          matrix.lint-target == 'github'
+        uses: 'abcxyz/actions/.github/actions/lint-github-actions@main' # ratchet:exclude
+        with:
+          actionlint_version: '${{ env.ACTIONS_LINT_ACTIONLINT_VERSION }}'
