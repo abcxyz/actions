@@ -47,37 +47,37 @@ jobs:
         id: 'lint-targets'
         env:
           REF: '${{ github.event.pull_request.head.sha }}'
+          LC_ALL: 'C'
         shell: 'bash'
         run: |-
           declare -a TARGETS=()
-          if git ls-tree -r --name-only "$REF" | LC_ALL=C grep --with-filename -E '(go.mod$|/.*\.go$)' >/dev/null; then
+          if git ls-tree -r --name-only "$REF" | grep --with-filename -E '(go.mod$|/.*\.go$)' >/dev/null; then
             TARGETS+=("golang" "golang-modules")
           fi
-          if git ls-tree -r --name-only "$REF" | LC_ALL=C grep --with-filename -E '.*\.(java)$' >/dev/null; then
+          if git ls-tree -r --name-only "$REF" | grep --with-filename -E '.*\.(java)$' >/dev/null; then
             TARGETS+=("java")
           fi
-          if git ls-tree -r --name-only "$REF" | LC_ALL=C grep --with-filename -E '.*\.(js)$' >/dev/null; then
+          if git ls-tree -r --name-only "$REF" | grep --with-filename -E '.*\.(js)$' >/dev/null; then
             TARGETS+=("javascript")
           fi
-          if git ls-tree -r --name-only "$REF" | LC_ALL=C grep --with-filename -E '.*\.(ts)$' >/dev/null; then
+          if git ls-tree -r --name-only "$REF" | grep --with-filename -E '.*\.(ts)$' >/dev/null; then
             TARGETS+=("typescript")
           fi
-          if git ls-tree -r --name-only "$REF" | LC_ALL=C grep --with-filename -E '.*\.(sh)$' >/dev/null; then
+          if git ls-tree -r --name-only "$REF" | grep --with-filename -E '.*\.(sh)$' >/dev/null; then
             TARGETS+=("shell")
           fi
-          if git ls-tree -r --name-only "$REF" | LC_ALL=C grep --with-filename -E '.*\.(tf)$' >/dev/null; then
+          if git ls-tree -r --name-only "$REF" | grep --with-filename -E '.*\.(tf)$' >/dev/null; then
             TARGETS+=("terraform")
           fi
-          if git ls-tree -r --name-only "$REF" | LC_ALL=C grep --with-filename -E '.*\.(yaml|yml)$' >/dev/null; then
+          if git ls-tree -r --name-only "$REF" | grep --with-filename -E '.*\.(yaml|yml)$' >/dev/null; then
             TARGETS+=("yaml")
           fi
-          if git ls-tree -r --name-only "$REF" | LC_ALL=C grep --with-filename -E '.github/(actions|workflows)/.*\.(yaml|yml)$' >/dev/null; then
-            TARGETS+=("ratchet")
+          if git ls-tree -r --name-only "$REF" | grep --with-filename -E '.github/(actions|workflows)/.*\.(yaml|yml)$' >/dev/null; then
+            TARGETS+=("github" "ratchet")
           fi
-
           LINT_TARGETS="$(jq --compact-output --null-input '$ARGS.positional' --args -- "${TARGETS[@]}")"
           echo "lint-targets -> ${LINT_TARGETS}"
-          echo "lint-targets=${LINT_TARGETS}" >> $GITHUB_OUTPUT
+          echo "lint-targets=${LINT_TARGETS}" >> "$GITHUB_OUTPUT"
 
   lint:
     runs-on: |-
@@ -148,6 +148,13 @@ jobs:
       # File or directory containing YAML files to lint.
       YAML_LINT_TARGET: |-
         ${{ vars.YAML_LINT_TARGET || '.' }}
+      ##############
+      ## GITHUB ####
+      ##############
+      # Note, must not start with GITHUB_
+      # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#naming-conventions-for-configuration-variables
+      ACTIONS_LINT_ACTIONLINT_VERSION: |-
+        ${{ vars.ACTIONS_LINT_ACTIONLINT_VERSION || '1.7.7' }}
 
     steps:
       - name: 'Checkout'
@@ -223,9 +230,16 @@ jobs:
           yamllint_version: '${{ env.YAML_LINT_YAMLLINT_VERSION }}'
           target: '${{ env.YAML_LINT_TARGET }}'
 
-      - name: '[GITHUB] Ratchet lint'
+      - name: '[GITHUB] lint ratchet'
         if: |
           matrix.lint-target == 'ratchet'
         uses: 'sethvargo/ratchet@main' # ratchet:exclude
         with:
           files: './.github/actions/**/*.yml ./.github/workflows/*.yml'
+
+      - name: '[GITHUB] lint actions'
+        if: |
+          matrix.lint-target == 'github'
+        uses: './.github/actions/lint-github-actions' # ratchet:exclude
+        with:
+          actionlint_version: '${{ env.ACTIONS_LINT_ACTIONLINT_VERSION }}'

@@ -133,7 +133,7 @@ runs:
         CHECKSUM: '${{ inputs.checksum }}'
       run: |-
         # Download binary
-        if [[ ! -z "${CHECKSUM}" ]]; then
+        if [[ -n "${CHECKSUM}" ]]; then
           SEPARATOR="?"
           if [[ "" == *"?"* ]]; then
             SEPARATOR="&"
