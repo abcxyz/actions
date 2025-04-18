@@ -23,6 +23,11 @@ name: 'lint-actions'
 
 on:
   pull_request:
+    types:
+      - 'opened'
+      - 'synchronize'
+      - 'reopened'
+      - 'edited'
   merge_group:
 
 concurrency:
@@ -48,6 +53,7 @@ jobs:
         env:
           REF: '${{ github.event.pull_request.head.sha }}'
           LC_ALL: 'C'
+          EVENT_NAME: '${{ github.event_name }}'
         shell: 'bash'
         run: |-
           # match_files determines if the current git repository has any files
@@ -82,6 +88,9 @@ jobs:
           fi
           if match_files '.github/(actions|workflows)/.*\.(yaml|yml)$'; then
             TARGETS+=("github" "ratchet")
+          fi
+          if [[ "$EVENT_NAME" == 'pull_request' ]]; then
+            TARGETS+=("pull-request")
           fi
           LINT_TARGETS="$(jq --compact-output --null-input '$ARGS.positional' --args -- "${TARGETS[@]}")"
           echo "lint-targets -> ${LINT_TARGETS}"
@@ -251,3 +260,10 @@ jobs:
         uses: './.github/actions/lint-github-actions' # ratchet:exclude
         with:
           actionlint_version: '${{ env.ACTIONS_LINT_ACTIONLINT_VERSION }}'
+
+      - name: '[PULL REQUEST] lint actions'
+        if: |
+          matrix.lint-target == 'pull-request'
+        uses: './.github/actions/pull-request-lint'
+        with:
+          pull_request_body: '${{ github.event.pull_request.body }}'

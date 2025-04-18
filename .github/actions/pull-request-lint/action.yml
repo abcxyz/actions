@@ -1,0 +1,45 @@
+# Copyright 2025 The Authors (see AUTHORS file)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+# This action is required to generate a pull request with signed commits using a bot or PAT
+# This is required to allow automation to pass organizational rulesets which include signed commits.
+# The commits will show signed by github.com.
+#
+# Alternatives to this solution were deemed infeasible:
+#  - Add exceptions for bots to the signed commits rulesets or use a certificate per bot identity, this is
+#    not ideal because then we have to maange secrets
+#  - Add exceptions for bots to the Google CLA, this would show status checks as failed which is not desirable
+
+name: 'PR Description Check'
+description: 'This Action checks if the pull request has a non-empty description.'
+
+inputs:
+  pull_request_body:
+    description: 'The body of the pull request'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Check PR Description Not Empty'
+      id: 'non-empty-pr-desc-check'
+      shell: 'bash'
+      run: |
+        if [[ -z "${{ inputs.pull_request_body }}" ]]; then
+          echo "Error: Pull request description cannot be empty."
+          exit 1
+        else
+          echo "Pull request description is not empty."
+          exit 0
+        fi
