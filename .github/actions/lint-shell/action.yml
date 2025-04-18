@@ -52,28 +52,32 @@ runs:
     - name: 'Lint Shell (default configuration)'
       if: |-
         ${{ hashFiles('.shellcheckrc') == '' }}
+      env:
+        TARGET: '${{ inputs.target }}'
       shell: 'bash'
       run: |-
         find "${TARGET}" \( -type f -name '*.sh' -or -name '*.bash' -or -name '*.zsh' \) -exec \
-        shellcheck \
-        --check-sourced \
-        --enable=all \
-        --severity=style \
-        --format=tty \
-        --color=always \
-        --rcfile="${{ steps.load-default-config.outputs.output-file }}" \
-        {} +
+          shellcheck \
+            --check-sourced \
+            --enable=all \
+            --severity=style \
+            --format=tty \
+            --color=always \
+            --rcfile="${{ steps.load-default-config.outputs.output-file }}" \
+            {} +
 
     - name: 'Lint Shell (custom configuration)'
       if: |-
         ${{ hashFiles('.shellcheckrc') != '' }}
+      env:
+        TARGET: '${{ inputs.target }}'
       shell: 'bash'
       run: |-
         find "${TARGET}" \( -type f -name '*.sh' -or -name '*.bash' -or -name '*.zsh' \) -exec \
-        shellcheck \
-        --check-sourced \
-        --enable=all \
-        --severity=style \
-        --format=tty \
-        --color=always \
-        {} +
+          shellcheck \
+            --check-sourced \
+            --enable=all \
+            --severity=style \
+            --format=tty \
+            --color=always \
+            {} +
