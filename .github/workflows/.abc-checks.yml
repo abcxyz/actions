@@ -1,4 +1,4 @@
-# Copyright 2023 The Authors (see AUTHORS file)
+# Copyright 2025 The Authors (see AUTHORS file)
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: 'approvals'
+name: 'abc-checks'
 
 on:
   pull_request:
@@ -37,9 +37,17 @@ permissions:
   actions: 'write'
   pull-requests: 'read'
 
-env:
-  TAGREP_VERSION: '0.0.7'
 
 jobs:
-  check:
+  approval:
     uses: './.github/workflows/want-lgtm-all.yml' # ratchet:exclude
+
+  pr-description:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+      - name: '[PULL REQUEST] lint actions'
+        uses: './.github/actions/pull-request-lint'
+        with:
+          pull_request_body: '${{ github.event.pull_request.body }}'
