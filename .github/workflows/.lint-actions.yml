@@ -71,6 +71,7 @@ jobs:
           GOMOD_DIRS="$(find_dirs_json '(go.mod$)')"
           echo "gomod-dirs -> ${GOMOD_DIRS}"
           if [[ "${GOMOD_DIRS}" != "[]" ]]; then
+            echo "DOING IT"
             if [[ "$(echo "${GOMOD_DIRS}" | jq length)" -gt "1" ]]; then
               echo "::warning::Only the first(${GOMOD_DIRS}) will be linted. Multiple go.mod are not supported."
             fi
