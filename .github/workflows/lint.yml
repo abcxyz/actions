@@ -59,7 +59,7 @@ jobs:
           }
           find_dirs_json() {
             local filepattern="${1}"
-            git ls-tree -r --name-only "${REF}" | grep -E "${filepattern}" | xargs -I {} bash -c 'echo $(dirname {})' | sort | jq -R -s -c 'split("\n")[:-1]' || echo '[]'
+            git ls-tree -r --name-only "${REF}" | grep -E "${filepattern}" | xargs -I {} bash -c 'echo $(dirname {})' | sort | jq -R -s -c 'split("\n")[:-1]' || true
           }
           GOMOD_DIRS="$(find_dirs_json '(go.mod$)')"
           if [[ "${GOMOD_DIRS}" != "[]" ]]; then
