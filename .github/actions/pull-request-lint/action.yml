@@ -37,6 +37,7 @@ runs:
       shell: 'bash'
       run: |
         if [[ -z "${{ inputs.pull_request_body }}" ]]; then
+          echo "${{ inputs.pull_request_body }}"
           echo "Error: Pull request description cannot be empty."
           exit 1
         else
