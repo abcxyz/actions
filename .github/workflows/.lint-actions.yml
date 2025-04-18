@@ -66,9 +66,6 @@ jobs:
           if match_files '.*\.(java)$'; then
             TARGETS+=("java")
           fi
-          if [[ "$EVENT_NAME" == 'pull_request' ]]; then
-            TARGETS+=("pull-request")
-          fi
           if match_files '.*\.(js)$'; then
             TARGETS+=("javascript")
           fi
@@ -86,6 +83,9 @@ jobs:
           fi
           if match_files '.github/(actions|workflows)/.*\.(yaml|yml)$'; then
             TARGETS+=("github" "ratchet")
+          fi
+          if [[ "$EVENT_NAME" == 'pull_request' ]]; then
+            TARGETS+=("pull-request")
           fi
           LINT_TARGETS="$(jq --compact-output --null-input '$ARGS.positional' --args -- "${TARGETS[@]}")"
           echo "lint-targets -> ${LINT_TARGETS}"
@@ -256,7 +256,7 @@ jobs:
         with:
           actionlint_version: '${{ env.ACTIONS_LINT_ACTIONLINT_VERSION }}'
 
-      - name: '[Pull Request] lint actions'
+      - name: '[PULL REQUEST] lint actions'
         if: |
           matrix.lint-target == 'pull-request'
         uses: './.github/actions/pull-request-lint'
