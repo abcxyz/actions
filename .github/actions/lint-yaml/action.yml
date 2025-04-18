@@ -66,11 +66,11 @@ runs:
         ${{ hashFiles('.yamllint.yml', '.yamllint.yaml') == '' }}
       shell: 'bash'
       run: |-
-        yamllint -c "${{ steps.load-default-config.outputs.output-file }}" ${{ inputs.target }}
+        yamllint --format github -c "${{ steps.load-default-config.outputs.output-file }}" ${{ inputs.target }}
 
     - name: 'Lint (custom configuration)'
       if: |-
         ${{ hashFiles('.yamllint.yml', '.yamllint.yaml') != '' }}
       shell: 'bash'
       run: |-
-        yamllint ${{ inputs.target }}
+        yamllint --format github ${{ inputs.target }}
