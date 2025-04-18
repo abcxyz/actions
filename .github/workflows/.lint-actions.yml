@@ -23,6 +23,11 @@ name: 'lint-actions'
 
 on:
   pull_request:
+    types:
+      - 'opened'
+      - 'synchronize'
+      - 'reopened'
+      - 'edited'
   merge_group:
 
 concurrency:
