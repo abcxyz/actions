@@ -66,12 +66,10 @@ jobs:
           }
           find_dirs_json() {
             local filepattern="${1}"
-            git ls-tree -r --name-only "${REF}" | grep -E "${filepattern}" | xargs -I {} bash -c 'echo $(dirname {})' | sort | jq -R -s -c 'split("\n")[:-1]' || echo '[]'
+            git ls-tree -r --name-only "${REF}" | grep -E "${filepattern}" | xargs -I {} bash -c 'echo $(dirname {})' | sort | jq -R -s -c 'split("\n")[:-1]' || true
           }
           GOMOD_DIRS="$(find_dirs_json '(go.mod$)')"
-          echo "gomod-dirs -> '${GOMOD_DIRS}'"
           if [[ "${GOMOD_DIRS}" != "[]" ]]; then
-            echo "DOING IT"
             if [[ "$(echo "${GOMOD_DIRS}" | jq length)" -gt "1" ]]; then
               echo "::warning::Only the first(${GOMOD_DIRS}) will be linted. Multiple go.mod are not supported."
             fi
