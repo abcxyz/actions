@@ -64,21 +64,20 @@ jobs:
             local filepattern="${1}"
             git ls-tree -r --name-only "${REF}" | grep -m 1 -E "${filepattern}" >/dev/null
           }
-          find_dirs() {
+          find_dirs_json() {
             local filepattern="${1}"
             git ls-tree -r --name-only "${REF}" | grep -E "${filepattern}" | xargs -I {} bash -c 'echo $(dirname {})' | sort | jq -R -s -c 'split("\n")[:-1]' || echo '[]'
           }
+          GOMOD_DIRS="$(find_dirs_json '(go.mod$)')"
+          if [[ "${GOMOD_DIRS}" != "[]" ]]; then
+            if [[ "$(echo "${GOMOD_DIRS}" | jq length)" -gt "1" ]]; then
+              echo "::warning::Only the first(${GOMOD_DIRS}) will be linted. Multiple go.mod are not supported."
+            fi
+            echo "gomod-dirs=${GOMOD_DIRS}" >> "${GITHUB_OUTPUT}"
+          fi
           declare -a TARGETS=()
           if match_files '(go.mod$|/.*\.go$)'; then
             TARGETS+=("golang" "golang-modules")
-            GOMOD_DIRS="$(find_dirs '(go.mod$)')"
-            len="$(echo "$GOMOD_DIRS" | jq length)"
-            if [[ "${len}" -gt "1" ]]; then
-              echo "::warning::Only the first(${GOMOD_DIRS}) will be linted. Multiple go.mod are not supported."
-            fi
-            if [[ "${len}" -ge "1" ]]; then
-              echo "gomod-dirs=${GOMOD_DIRS}" >> "${GITHUB_OUTPUT}"
-            fi
           fi
           if match_files '.*\.(java)$'; then
             TARGETS+=("java")
