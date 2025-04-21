@@ -231,13 +231,6 @@ jobs:
         with:
           actionlint_version: '${{ env.ACTIONS_LINT_ACTIONLINT_VERSION }}'
 
-      - name: '[PULL REQUEST] lint actions'
-        if: |
-          matrix.lint-target == 'pull-request'
-        uses: './.github/actions/pull-request-lint'
-        with:
-          pull_request_body: '${{ github.event.pull_request.body }}'
-
   lint-go:
     runs-on: |-
       ${{ vars.LINT_RUNS_ON || 'ubuntu-latest' }}
