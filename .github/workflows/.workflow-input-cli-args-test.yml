@@ -30,7 +30,7 @@ jobs:
         env:
           CLI_ARGS: 'some args -one -two -three -four'
         run: |-
-          cli_args_array=$("$CLI_ARGS")
+          cli_args_array=("${CLI_ARGS}")
           echo "${cli_args_array[@]}"
           if [[ "${cli_args_array[@]}" != "some args -one -two -three -four" ]]; then
             echo "::error::Expected different cli args results"
@@ -41,7 +41,7 @@ jobs:
         env:
           CLI_ARGS: 'some $(pwd) $(echo "hello") -other'
         run: |-
-          cli_args_array=$("$CLI_ARGS")
+          cli_args_array=("${CLI_ARGS}")
           echo "${cli_args_array[@]}"
           if [[ "${cli_args_array[@]}" != "some $(pwd) $(echo "hello") -other" ]]; then
             echo "::error::Expected different cli args results"
