@@ -244,7 +244,7 @@ jobs:
     needs:
       - 'init'
     if: |
-      needs.init.outputs.gomod-dirs != '[]' && github.repository == 'abcxyz/actions'
+      needs.init.outputs.gomod-dirs != '' && needs.init.outputs.gomod-dirs != '[]' && github.repository == 'abcxyz/actions'
     permissions:
       contents: 'read'
     strategy:
