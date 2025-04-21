@@ -63,17 +63,17 @@ jobs:
           }
           to_json() {
             local filepaths="${1}"
-            echo "${filepaths}" | jq -R -s -c 'split("\n")[:-1]'
+            echo "${filepaths}" | jq -R -s -c 'split("\n")[:-1]' || true
           }
+          # Go linting handled separtely from the rest of linting in order to
+          # shard linting across each go.mod file.
           GOMOD_DIRS="$(find_dirs '(go.mod$)')"
           if [[ -n "${GOMOD_DIRS}" ]]; then
             GOMOD_DIRS_OUTPUT_FOR_MATRIX="$(to_json "${GOMOD_DIRS}")"
+            echo "gomod-dirs -> ${GOMOD_DIRS_OUTPUT_FOR_MATRIX}"
             echo "gomod-dirs=${GOMOD_DIRS_OUTPUT_FOR_MATRIX}" >> "${GITHUB_OUTPUT}"
           fi
           declare -a TARGETS=()
-          if match_files '(go.mod$|/.*\.go$)'; then
-            # GO linting handled separately.
-          fi
           if match_files '.*\.(java)$'; then
             TARGETS+=("java")
           fi
@@ -113,7 +113,6 @@ jobs:
       max-parallel: 100
       matrix:
         lint-target: '${{ fromJSON(needs.init.outputs.lint-targets) }}'
-    # TODO: Consider parsing from config file in the repo.
     env:
       ##############
       ## JAVA ######
@@ -230,7 +229,7 @@ jobs:
     needs:
       - 'init'
     if: |
-      needs.init.outputs.gomod-dirs != '[]' && github.repository == 'abcxyz/actions'
+      needs.init.outputs.gomod-dirs != '[]' && github.repository != 'abcxyz/actions'
     permissions:
       contents: 'read'
     strategy:
@@ -238,7 +237,6 @@ jobs:
       max-parallel: 100
       matrix:
         gomod-dir: '${{ fromJSON(needs.init.outputs.gomod-dirs) }}'
-    # TODO: Consider parsing from config file in the repo.
     env:
       ##############
       ## GOLANG ####
@@ -261,7 +259,7 @@ jobs:
       - name: '[GOLANG] Lint Go modules'
         if: |
           always()
-        uses: './.github/actions/lint-go-modules' # ratchet:exclude
+        uses: 'abcxyz/actions/.github/actions/lint-go-modules@main' # ratchet:exclude
         with:
           go_version: '${{ env.GO_LINT_GO_VERSION }}'
           go_version_file: '${{ matrix.gomod-dir }}/go.mod'
@@ -272,7 +270,7 @@ jobs:
       - name: '[GOLANG] Lint Go'
         if: |
           always()
-        uses: './.github/actions/lint-go' # ratchet:exclude
+        uses: 'abcxyz/actions/.github/actions/lint-go@main' # ratchet:exclude
         with:
           go_version: '${{ env.GO_LINT_GO_VERSION }}'
           go_version_file: '${{ matrix.gomod-dir }}/go.mod'

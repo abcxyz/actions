@@ -72,15 +72,15 @@ jobs:
             local filepaths="${1}"
             echo "${filepaths}" | jq -R -s -c 'split("\n")[:-1]'
           }
+          # Go linting handled separtely from the rest of linting in order to
+          # shard linting across each go.mod file.
           GOMOD_DIRS="$(find_dirs '(go.mod$)')"
           if [[ -n "${GOMOD_DIRS}" ]]; then
             GOMOD_DIRS_OUTPUT_FOR_MATRIX="$(to_json "${GOMOD_DIRS}")"
+            echo "gomod-dirs -> ${GOMOD_DIRS_OUTPUT_FOR_MATRIX}"
             echo "gomod-dirs=${GOMOD_DIRS_OUTPUT_FOR_MATRIX}" >> "${GITHUB_OUTPUT}"
           fi
           declare -a TARGETS=()
-          if match_files '(go.mod$|/.*\.go$)'; then
-            # GO linting handled separately.
-          fi
           if match_files '.*\.(java)$'; then
             TARGETS+=("java")
           fi
