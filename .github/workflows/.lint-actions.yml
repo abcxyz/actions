@@ -76,9 +76,9 @@ jobs:
           # shard linting across each go.mod file.
           GOMOD_DIRS="$(find_dirs '(go.mod$)')"
           if [[ -n "${GOMOD_DIRS}" ]]; then
-            GOMOD_DIRS_OUTPUT_FOR_MATRIX="$(to_json "${GOMOD_DIRS}")"
-            echo "gomod-dirs -> ${GOMOD_DIRS_OUTPUT_FOR_MATRIX}"
-            echo "gomod-dirs=${GOMOD_DIRS_OUTPUT_FOR_MATRIX}" >> "${GITHUB_OUTPUT}"
+            GOMOD_DIRS_JSON="$(to_json "${GOMOD_DIRS}")"
+            echo "::notice::Found go.mod directories: ${GOMOD_DIRS_JSON}"
+            echo "gomod-dirs=${GOMOD_DIRS_JSON}" >> "${GITHUB_OUTPUT}"
           fi
           declare -a TARGETS=()
           if match_files '.*\.(java)$'; then
