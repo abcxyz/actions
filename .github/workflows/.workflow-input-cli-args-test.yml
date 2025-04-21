@@ -43,7 +43,7 @@ jobs:
         run: |-
           cli_args_array=("${CLI_ARGS}")
           echo "${cli_args_array[@]}"
-          if [[ "${cli_args_array[@]}" != "some $(pwd) $(echo "hello") -other" ]]; then
+          if [[ "${cli_args_array[@]}" != "some \$(pwd) \$(echo "hello") -other" ]]; then
             echo "::error::Expected different cli args results"
             exit 1
           fi
