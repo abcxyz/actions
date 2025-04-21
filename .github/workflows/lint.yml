@@ -57,20 +57,22 @@ jobs:
             local filepattern="${1}"
             git ls-tree -r --name-only "${REF}" | grep -m 1 -E "${filepattern}" >/dev/null
           }
-          find_dirs_json() {
+          find_dirs() {
             local filepattern="${1}"
-            git ls-tree -r --name-only "${REF}" | grep -E "${filepattern}" | xargs -I {} bash -c 'echo $(dirname {})' | sort | jq -R -s -c 'split("\n")[:-1]' || true
+            git ls-tree -r --name-only "${REF}" | grep -E "${filepattern}" | xargs -I {} bash -c 'echo $(dirname {})' | sort || true
           }
-          GOMOD_DIRS="$(find_dirs_json '(go.mod$)')"
-          if [[ "${GOMOD_DIRS}" != "[]" ]]; then
-            if [[ "$(echo "${GOMOD_DIRS}" | jq length)" -gt "1" ]]; then
-              echo "::warning::Only the first(${GOMOD_DIRS}) will be linted. Multiple go.mod are not supported."
-            fi
-            echo "gomod-dirs=${GOMOD_DIRS}" >> "${GITHUB_OUTPUT}"
+          to_json() {
+            local filepaths="${1}"
+            echo "${filepaths}" | jq -R -s -c 'split("\n")[:-1]'
+          }
+          GOMOD_DIRS="$(find_dirs '(go.mod$)')"
+          if [[ -n "${GOMOD_DIRS}" ]]; then
+            GOMOD_DIRS_OUTPUT_FOR_MATRIX="$(to_json "${GOMOD_DIRS}")"
+            echo "gomod-dirs=${GOMOD_DIRS_OUTPUT_FOR_MATRIX}" >> "${GITHUB_OUTPUT}"
           fi
           declare -a TARGETS=()
           if match_files '(go.mod$|/.*\.go$)'; then
-            TARGETS+=("golang" "golang-modules")
+            # GO linting handled separately.
           fi
           if match_files '.*\.(java)$'; then
             TARGETS+=("java")
@@ -113,24 +115,6 @@ jobs:
         lint-target: '${{ fromJSON(needs.init.outputs.lint-targets) }}'
     # TODO: Consider parsing from config file in the repo.
     env:
-      ##############
-      ## GOLANG ####
-      ##############
-      # The version of Go to install and use.
-      GO_LINT_GO_VERSION: |-
-        ${{ vars.GO_LINT_GO_VERSION }}
-      # Path to the go.mod file to extract a version.
-      GO_LINT_GO_VERSION_FILE: |-
-        ${{ vars.GO_LINT_GO_VERSION_FILE || format('{0}/go.mod', fromJson(needs.init.outputs.gomod-dirs || '["."]')[0]) }}
-      # The URL to a golangci file. This is only used if no file is found in the local directory.
-      GO_LINT_GOLANGCI_URL: |-
-        ${{ vars.GO_LINT_GOLANGCI_URL || 'https://raw.githubusercontent.com/abcxyz/actions/main/default.golangci.yml' }}
-      # Directory in which Go files reside.
-      GO_LINT_DIRECTORY: |-
-        ${{ vars.GO_LINT_DIRECTORY || fromJson(needs.init.outputs.gomod-dirs || '["."]')[0] }}
-      # Version of golangci linter to use.
-      GO_LINT_GOLANGCI_LINT_VERSION: |-
-        ${{ vars.GO_LINT_GOLANGCI_LINT_VERSION || 'v1.64' }}
       ##############
       ## JAVA ######
       ##############
@@ -179,28 +163,6 @@ jobs:
         uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
         with:
           fetch-depth: 1 # shallow clone
-
-      - name: '[GOLANG] Lint Go'
-        if: |
-          matrix.lint-target == 'golang'
-        uses: 'abcxyz/actions/.github/actions/lint-go@main' # ratchet:exclude
-        with:
-          go_version: '${{ env.GO_LINT_GO_VERSION }}'
-          go_version_file: '${{ env.GO_LINT_GO_VERSION_FILE }}'
-          golangci_url: '${{ env.GO_LINT_GOLANGCI_URL }}'
-          directory: '${{ env.GO_LINT_DIRECTORY }}'
-          golangci_lint_version: '${{ env.GO_LINT_GOLANGCI_LINT_VERSION }}'
-
-      - name: '[GOLANG] Lint Go modules'
-        if: |
-          matrix.lint-target == 'golang-modules'
-        uses: 'abcxyz/actions/.github/actions/lint-go-modules@main' # ratchet:exclude
-        with:
-          go_version: '${{ env.GO_LINT_GO_VERSION }}'
-          go_version_file: '${{ env.GO_LINT_GO_VERSION_FILE }}'
-          golangci_url: '${{ env.GO_LINT_GOLANGCI_URL }}'
-          directory: '${{ env.GO_LINT_DIRECTORY }}'
-          golangci_lint_version: '${{ env.GO_LINT_GOLANGCI_LINT_VERSION }}'
 
       - name: '[JAVA] Lint Java'
         if: |
@@ -261,3 +223,59 @@ jobs:
         uses: 'abcxyz/actions/.github/actions/lint-github-actions@main' # ratchet:exclude
         with:
           actionlint_version: '${{ env.ACTIONS_LINT_ACTIONLINT_VERSION }}'
+
+  lint-go:
+    runs-on: |-
+      ${{ vars.LINT_RUNS_ON || 'ubuntu-latest' }}
+    needs:
+      - 'init'
+    if: |
+      needs.init.outputs.gomod-dirs != '[]' && github.repository == 'abcxyz/actions'
+    permissions:
+      contents: 'read'
+    strategy:
+      fail-fast: false
+      max-parallel: 100
+      matrix:
+        gomod-dir: '${{ fromJSON(needs.init.outputs.gomod-dirs) }}'
+    # TODO: Consider parsing from config file in the repo.
+    env:
+      ##############
+      ## GOLANG ####
+      ##############
+      # The version of Go to install and use.
+      GO_LINT_GO_VERSION: |-
+        ${{ vars.GO_LINT_GO_VERSION }}
+      # Path to the go.mod file to extract a version.
+      GO_LINT_GOLANGCI_URL: |-
+        ${{ vars.GO_LINT_GOLANGCI_URL || 'https://raw.githubusercontent.com/abcxyz/actions/main/default.golangci.yml' }}
+      GO_LINT_GOLANGCI_LINT_VERSION: |-
+        ${{ vars.GO_LINT_GOLANGCI_LINT_VERSION || 'v1.64' }}
+
+    steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+        with:
+          fetch-depth: 1 # shallow clone
+
+      - name: '[GOLANG] Lint Go modules'
+        if: |
+          always()
+        uses: './.github/actions/lint-go-modules' # ratchet:exclude
+        with:
+          go_version: '${{ env.GO_LINT_GO_VERSION }}'
+          go_version_file: '${{ matrix.gomod-dir }}/go.mod'
+          golangci_url: '${{ env.GO_LINT_GOLANGCI_URL }}'
+          directory: '${{ matrix.gomod-dir }}'
+          golangci_lint_version: '${{ env.GO_LINT_GOLANGCI_LINT_VERSION }}'
+
+      - name: '[GOLANG] Lint Go'
+        if: |
+          always()
+        uses: './.github/actions/lint-go' # ratchet:exclude
+        with:
+          go_version: '${{ env.GO_LINT_GO_VERSION }}'
+          go_version_file: '${{ matrix.gomod-dir }}/go.mod'
+          golangci_url: '${{ env.GO_LINT_GOLANGCI_URL }}'
+          directory: '${{ matrix.gomod-dir }}'
+          golangci_lint_version: '${{ env.GO_LINT_GOLANGCI_LINT_VERSION }}'
