@@ -1,0 +1,76 @@
+# Copyright 2024 The Authors (see AUTHORS file)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+#
+# This GitHub Action increments a VERSION file at the root of the repository by
+# the given semver strategy. If no VERSION file exists, it uses "0.0.0". It does
+# not commit the resulting file.
+#
+# It includes two outputs: the "current_version" and the "next_version".
+#
+# Example usage:
+#  inputs:
+#   cli_args:
+#     description: |-
+#       Strategy to update the version based on semantic versioning.
+#     default: 'patch'
+#     type: 'string'
+#     required: true
+#
+#   jobs:
+#     some-job:
+#       runs-on: 'ubuntu-latest'
+#       steps:
+#         - name: 'CLI Args'
+#           id: 'cli-args'
+#           uses: 'abcxyz/actions/.github/actions/workflow-input-parse-cli-args@main'
+#           with:
+#             cli_args: '${{ inputs.cli_args }}'
+#
+#         - name: 'Use cli args'
+#           env:
+#             CLI_ARGS: '${{ fromJSON(steps.cli-args.outputs.parsed_json) }}'
+#           run: |-
+#             cli_args_array=$(echo "${CLI_ARGS}")
+#             echo "${cli_args_array[@]}"
+#
+
+name: 'workflow-input-parse-cli-args'
+
+inputs:
+  cli_args:
+    description: |-
+      String of CLI args to parse
+    type: 'string'
+    required: true
+
+outputs:
+  parsed_json:
+    description: |-
+      The CLI args parsed as a json array. JSON must be used because we cannot output a bash array.
+    value: '${{ steps.parse.outputs.parsed_json }}'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Parse Args'
+      id: 'parse'
+      env:
+        CLI_ARGS: '${{ inputs.cli_args }}'
+      shell: 'bash'
+      run: |
+        IFS=' ' read -r -a array <<< "$string"
+        parsed_array=
+        json="$(jq -cn --argjson array "${my_array[@]}" '{output: $array}')"
+        echo "parsed_json=${json}" >> $GITHUB_OUTPUT
