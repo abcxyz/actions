@@ -33,12 +33,14 @@ runs:
         terraform_version: '${{ inputs.terraform_version }}'
 
     - name: 'Check formatting'
-      shell: 'bash'
+      if: 'always()'
       working-directory: '${{ inputs.directory }}'
+      shell: 'bash'
       run: |-
         terraform fmt -recursive -check -diff
 
     - name: 'abcxyz Terraform linter'
+      if: 'always()'
       uses: 'abcxyz/terraform-linter@main' # ratchet:exclude
       with:
         paths: '${{ inputs.directory }}'
