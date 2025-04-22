@@ -94,7 +94,7 @@ runs:
         GOOGLE_JAVA_FORMAT_VERSION_FILE: '${{ inputs.google_java_format_version_file }}'
       run: |
         version="$(cat "${GOOGLE_JAVA_FORMAT_VERSION_FILE}")"
-        echo "version="${version}" >> "${GITHUB_OUTPUT}"
+        echo "version=${version}" >> "${GITHUB_OUTPUT}"
 
     - name: 'Setup Java'
       uses: 'actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00' # ratchet:actions/setup-java@v4
