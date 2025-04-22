@@ -43,6 +43,7 @@ runs:
       id: 'java-info'
       if: |
         inputs.java_version_file == '.java-version'
+      shell: 'bash'
       env:
         JAVA_VERSION_FILE: '${{ inputs.java_version_file }}'
       run: |
