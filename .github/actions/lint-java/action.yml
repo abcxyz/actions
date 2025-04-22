@@ -44,7 +44,7 @@ runs:
       with:
         distribution: '${{ inputs.java_distribution }}'
         java-version: '${{ inputs.java_version }}'
-        java_version_file: '${{ inputs.java_version_file }}'
+        java-version-file: '${{ inputs.java_version_file }}'
 
     - name: 'Download google-java-format'
       shell: 'bash'
