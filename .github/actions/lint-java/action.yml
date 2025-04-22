@@ -31,6 +31,10 @@ inputs:
     description: 'The version of google-java-format to use. This must be the full version with no leading "v" prefix.'
     type: 'string'
     default: '1.25.2'
+  google_java_format_version_file:
+    description: 'The version file with the google-java-format to use. This must be the full version with no leading "v" prefix.'
+    type: 'string'
+    default: '.java-version-google-format'
   directory:
     description: 'Directory in which Java files reside.'
     type: 'string'
@@ -81,6 +85,17 @@ runs:
           echo "distribution=jetbrains" >> "${GITHUB_OUTPUT}"
         fi
 
+    - name: 'Parse version info'
+      id: 'google-java-info'
+      if: |
+        inputs.google_java_format_version_file != ''
+      shell: 'bash'
+      env:
+        GOOGLE_JAVA_FORMAT_VERSION_FILE: '${{ inputs.google_java_format_version_file }}'
+      run: |
+        version="$(cat "${GOOGLE_JAVA_FORMAT_VERSION_FILE}")"
+        echo "version="${version}" >> "${GITHUB_OUTPUT}"
+
     - name: 'Setup Java'
       uses: 'actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00' # ratchet:actions/setup-java@v4
       with:
@@ -90,24 +105,28 @@ runs:
 
     - name: 'Download google-java-format'
       shell: 'bash'
+      env:
+        GOOGLE_JAVA_FORMAT_VERSION: '${{ steps.google-java-info.outputs.version || inputs.google_java_format_version }}'
       run: |-
-        BIN='${{ runner.tool_cache }}/google-java-format-${{ inputs.google_java_format_version }}'
+        BIN="${{ runner.tool_cache }}/google-java-format-${GOOGLE_JAVA_FORMAT_VERSION}"
 
         if [[ -x "${BIN}" ]]; then
           echo "Already installed!"
         else
           curl -sLfo "${BIN}" \
-            "https://github.com/google/google-java-format/releases/download/v${{ inputs.google_java_format_version }}/google-java-format-${{ inputs.google_java_format_version }}-all-deps.jar"
+            "https://github.com/google/google-java-format/releases/download/v${GOOGLE_JAVA_FORMAT_VERSION}/google-java-format-${GOOGLE_JAVA_FORMAT_VERSION}-all-deps.jar"
           chmod +x "${BIN}"
         fi
 
     - name: 'Check formatting'
       shell: 'bash'
       working-directory: '${{ inputs.directory }}'
+      env:
+        GOOGLE_JAVA_FORMAT_VERSION: '${{ steps.google-java-info.outputs.version || inputs.google_java_format_version }}'
       run: |-
         shopt -s globstar
 
-        java -jar ${{ runner.tool_cache }}/google-java-format-${{ inputs.google_java_format_version }} -i **/*.java
+        java -jar "${{ runner.tool_cache }}/google-java-format-${GOOGLE_JAVA_FORMAT_VERSION}" -i **/*.java
 
         if [ -n "$(git status -s -uall)" ]; then
           echo "::error title=Java formatting::Detected unformatted Java"
