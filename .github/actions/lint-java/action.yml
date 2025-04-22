@@ -43,49 +43,14 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: 'Parse version info'
-      id: 'java-info'
-      if: |
-        inputs.java_version_file == '.java-version'
-      shell: 'bash'
-      env:
-        JAVA_VERSION_FILE: '${{ inputs.java_version_file }}'
-      run: |
-        # Eventually actions/setup-java should support parsing distribution
-        # from the .java-version file.
-        # https://github.com/actions/setup-java/issues/738
-        version="$(cat "${JAVA_VERSION_FILE}")"
-        if [[ "${version}" == temurin-* ]]; then
-          echo "distribution=termurin" >> "${GITHUB_OUTPUT}"
-        elif [[ "${version}" == zulu-* ]]; then
-          echo "distribution=zulu" >> "${GITHUB_OUTPUT}"
-        elif [[ "${version}" == adopt-openj9-* ]]; then
-          echo "distribution=adopt-openj9" >> "${GITHUB_OUTPUT}"
-        elif [[ "${version}" == adopt-hotspot-* ]]; then
-          echo "distribution=adopt-hotspot" >> "${GITHUB_OUTPUT}"
-        elif [[ "${version}" == adopt-* ]]; then
-          echo "distribution=adopt" >> "${GITHUB_OUTPUT}"
-        elif [[ "${version}" == liberica-* ]]; then
-          echo "distribution=liberica" >> "${GITHUB_OUTPUT}"
-        elif [[ "${version}" == microsoft-* ]]; then
-          echo "distribution=microsoft" >> "${GITHUB_OUTPUT}"
-        elif [[ "${version}" == corretto-* ]]; then
-          echo "distribution=corretto" >> "${GITHUB_OUTPUT}"
-        elif [[ "${version}" == semeru-* ]]; then
-          echo "distribution=semeru" >> "${GITHUB_OUTPUT}"
-        elif [[ "${version}" == oracle-* ]]; then
-          echo "distribution=oracle" >> "${GITHUB_OUTPUT}"
-        elif [[ "${version}" == dragonwell-* ]]; then
-          echo "distribution=dragonwell" >> "${GITHUB_OUTPUT}"
-        elif [[ "${version}" == sapmachine-* ]]; then
-          echo "distribution=sapmachine" >> "${GITHUB_OUTPUT}"
-        elif [[ "${version}" == graalvm-* ]]; then
-          echo "distribution=graalvm" >> "${GITHUB_OUTPUT}"
-        elif [[ "${version}" == jetbrains-* ]]; then
-          echo "distribution=jetbrains" >> "${GITHUB_OUTPUT}"
-        fi
+    - name: 'Setup Java'
+      uses: 'abcxyz/actions/.github/actions/setup-java-strict@main' # ratchet:ignore
+      with:
+        distribution: '${{ inputs.java_distribution }}'
+        java-version: '${{ inputs.java_version }}'
+        java-version-file: '${{ inputs.java_version_file }}'
 
-    - name: 'Parse version info'
+    - name: 'Parse google java format version info'
       id: 'google-java-info'
       if: |
         inputs.google_java_format_version_file != ''
@@ -95,13 +60,6 @@ runs:
       run: |
         version="$(cat "${GOOGLE_JAVA_FORMAT_VERSION_FILE}")"
         echo "version=${version}" >> "${GITHUB_OUTPUT}"
-
-    - name: 'Setup Java'
-      uses: 'actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00' # ratchet:actions/setup-java@v4
-      with:
-        distribution: '${{ steps.java-info.outputs.distribution || inputs.java_distribution }}'
-        java-version: '${{ inputs.java_version }}'
-        java-version-file: '${{ inputs.java_version_file }}'
 
     - name: 'Download google-java-format'
       shell: 'bash'

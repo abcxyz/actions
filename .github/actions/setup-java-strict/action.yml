@@ -1,0 +1,81 @@
+# Copyright 2025 The Authors (see AUTHORS file)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: 'setup-java-strict'
+description: 'Setup java using a .java-version file.'
+inputs:
+  java_version:
+    description: 'The version of Java to install and use.'
+    type: 'string'
+    default: ''
+  java_version_file:
+    description: 'The version file to use to detect java versions.'
+    type: 'string'
+    default: '.java-version'
+  java_distribution:
+    description: 'The distibution of Java to use.'
+    type: 'string'
+    default: ''
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Parse version info'
+      id: 'java-info'
+      if: |
+        inputs.java_version_file == '.java-version'
+      shell: 'bash'
+      env:
+        JAVA_VERSION_FILE: '${{ inputs.java_version_file }}'
+      run: |
+        # Eventually actions/setup-java should support parsing distribution
+        # from the .java-version file.
+        # https://github.com/actions/setup-java/issues/738
+        version="$(cat "${JAVA_VERSION_FILE}")"
+        if [[ "${version}" == temurin-* ]]; then
+          echo "distribution=termurin" >> "${GITHUB_OUTPUT}"
+        elif [[ "${version}" == zulu-* ]]; then
+          echo "distribution=zulu" >> "${GITHUB_OUTPUT}"
+        elif [[ "${version}" == adopt-openj9-* ]]; then
+          echo "distribution=adopt-openj9" >> "${GITHUB_OUTPUT}"
+        elif [[ "${version}" == adopt-hotspot-* ]]; then
+          echo "distribution=adopt-hotspot" >> "${GITHUB_OUTPUT}"
+        elif [[ "${version}" == adopt-* ]]; then
+          echo "distribution=adopt" >> "${GITHUB_OUTPUT}"
+        elif [[ "${version}" == liberica-* ]]; then
+          echo "distribution=liberica" >> "${GITHUB_OUTPUT}"
+        elif [[ "${version}" == microsoft-* ]]; then
+          echo "distribution=microsoft" >> "${GITHUB_OUTPUT}"
+        elif [[ "${version}" == corretto-* ]]; then
+          echo "distribution=corretto" >> "${GITHUB_OUTPUT}"
+        elif [[ "${version}" == semeru-* ]]; then
+          echo "distribution=semeru" >> "${GITHUB_OUTPUT}"
+        elif [[ "${version}" == oracle-* ]]; then
+          echo "distribution=oracle" >> "${GITHUB_OUTPUT}"
+        elif [[ "${version}" == dragonwell-* ]]; then
+          echo "distribution=dragonwell" >> "${GITHUB_OUTPUT}"
+        elif [[ "${version}" == sapmachine-* ]]; then
+          echo "distribution=sapmachine" >> "${GITHUB_OUTPUT}"
+        elif [[ "${version}" == graalvm-* ]]; then
+          echo "distribution=graalvm" >> "${GITHUB_OUTPUT}"
+        elif [[ "${version}" == jetbrains-* ]]; then
+          echo "distribution=jetbrains" >> "${GITHUB_OUTPUT}"
+        fi
+
+    - name: 'Setup Java'
+      uses: 'actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00' # ratchet:actions/setup-java@v4
+      with:
+        distribution: '${{ steps.java-info.outputs.distribution || inputs.java_distribution }}'
+        java-version: '${{ inputs.java_version }}'
+        java-version-file: '${{ inputs.java_version_file }}'
