@@ -39,8 +39,10 @@ inputs:
     description: 'Directory in which Java files reside.'
     type: 'string'
     default: '.'
-secrets:
   github_token:
+    description: |-
+      GitHub PAT or App Token to use for authentication.
+    type: 'string'
     required: true
 
 runs:
@@ -102,14 +104,14 @@ runs:
     #       echo "version=${version#jetbrains-}" >> "${GITHUB_OUTPUT}"
     #     fi
 
-    - name: "Set up GraalVM ${{ matrix.java }}"
-      uses: graalvm/setup-graalvm@v1
+    - name: 'Set up GraalVM ${{ matrix.java }}'
+      uses: 'graalvm/setup-graalvm@v1'
       with:
-        java-version: "21"
-        distribution: "graalvm-community"
-        github-token: ${{ secrets.github_token }}
-        native-image-job-reports: "true"
-        cache: "maven"
+        java-version: '21'
+        distribution: 'graalvm-community'
+        github-token: '${{ inputs.github_token }}'
+        native-image-job-reports: 'true'
+        cache: 'maven'
 
     # - name: 'Setup Java'
     #   uses: 'abcxyz/actions/.github/actions/setup-java-strict@09ff15858f2515a21985c660d771f48bfef514b6' # ratchet:exclude
