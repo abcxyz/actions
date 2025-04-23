@@ -15,6 +15,14 @@
 name: 'lint-java'
 description: 'Lint java against the abcxyz style guide.'
 inputs:
+  google_java_format_version:
+    description: 'The version of google-java-format to use. This must be the full version with no leading "v" prefix.'
+    type: 'string'
+    default: '1.25.2'
+  directory:
+    description: 'Directory in which Java files reside.'
+    type: 'string'
+    default: '.'
   graalvm_java_version:
     description: 'The version of Java to install and use for the graalvm compiled google-java-format binary.'
     type: 'string'
@@ -27,10 +35,6 @@ inputs:
     description: 'The java cache to use with graalvm.'
     type: 'string'
     default: 'maven'
-  directory:
-    description: 'Directory in which Java files reside.'
-    type: 'string'
-    default: '.'
   github_token:
     description: |-
       GitHub PAT or App Token to use for authentication.
