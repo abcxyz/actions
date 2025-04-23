@@ -15,30 +15,24 @@
 name: 'setup-java-strict'
 description: 'Setup java using a .java-version file.'
 inputs:
-  java_version:
-    description: 'The version of Java to install and use.'
-    type: 'string'
-    default: ''
   java_version_file:
     description: 'The version file to use to detect java versions.'
     type: 'string'
     default: '.java-version'
-  java_distribution:
-    description: 'The distibution of Java to use.'
-    type: 'string'
-    default: ''
 
 runs:
   using: 'composite'
   steps:
     - name: 'Parse version info'
       id: 'java-info'
-      if: |
-        inputs.java_version_file == '.java-version'
       shell: 'bash'
       env:
         JAVA_VERSION_FILE: '${{ inputs.java_version_file }}'
       run: |
+        if [[ ! -f "${JAVA_VERSION_FILE}" ]]; then
+          echo "::error::${JAVA_VERSION_FILE} does not exist"
+          exit 1
+        fi
         # Eventually actions/setup-java should support parsing distribution
         # from the .java-version file.
         # https://github.com/actions/setup-java/issues/738
@@ -76,6 +70,5 @@ runs:
     - name: 'Setup Java'
       uses: 'actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00' # ratchet:actions/setup-java@v4
       with:
-        distribution: '${{ steps.java-info.outputs.distribution || inputs.java_distribution }}'
-        java-version: '${{ inputs.java_version }}'
+        distribution: '${{ steps.java-info.outputs.distribution }}'
         java-version-file: '${{ inputs.java_version_file }}'
