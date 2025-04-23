@@ -107,7 +107,7 @@ runs:
       with:
         java-version: "21"
         distribution: "graalvm-community"
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+        github-token: ${{ secrets.github_token }}
         native-image-job-reports: "true"
         cache: "maven"
 
