@@ -39,6 +39,9 @@ inputs:
     description: 'Directory in which Java files reside.'
     type: 'string'
     default: '.'
+secrets:
+  github_token:
+    required: true
 
 runs:
   using: 'composite'
