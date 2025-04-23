@@ -41,7 +41,7 @@ runs:
   using: 'composite'
   steps:
     - name: 'Set up GraalVM ${{ matrix.java }}'
-      uses: 'graalvm/setup-graalvm@v1'
+      uses: 'graalvm/setup-graalvm@01ed653ac833fe80569f1ef9f25585ba2811baab' # ratchet:graalvm/setup-graalvm@v1
       with:
         java-version: '${{ inputs.graalvm_java_version }}'
         distribution: '${{ inputs.graalvm_java_distribution }}'
