@@ -15,26 +15,18 @@
 name: 'lint-java'
 description: 'Lint java against the abcxyz style guide.'
 inputs:
-  java_version:
-    description: 'The version of Java to install and use.'
+  graalvm_java_version:
+    description: 'The version of Java to install and use for the graalvm compiled google-java-format binary.'
     type: 'string'
-    default: ''
-  java_version_file:
-    description: 'The version file to use to detect java versions.'
+    default: '21'
+  graalvm_java_distribution:
+    description: 'The distibution of Java to use for the graalvm compiled google-java-format binary.'
     type: 'string'
-    default: '.java-version'
-  java_distribution:
-    description: 'The distibution of Java to use.'
+    default: 'graalvm-community'
+  graalvm_cache:
+    description: 'The java cache to use with graalvm.'
     type: 'string'
-    default: ''
-  google_java_format_version:
-    description: 'The version of google-java-format to use. This must be the full version with no leading "v" prefix.'
-    type: 'string'
-    default: '1.25.2'
-  google_java_format_version_file:
-    description: 'The version file with the google-java-format to use. This must be the full version with no leading "v" prefix.'
-    type: 'string'
-    default: '.java-version-google-format'
+    default: 'maven'
   directory:
     description: 'Directory in which Java files reside.'
     type: 'string'
@@ -48,93 +40,18 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    # - name: 'Parse version info'
-    #   id: 'java-info'
-    #   if: |
-    #     inputs.java_version_file == '.java-version'
-    #   shell: 'bash'
-    #   env:
-    #     JAVA_VERSION_FILE: '${{ inputs.java_version_file }}'
-    #   run: |
-    #     # Eventually actions/setup-java should support parsing distribution
-    #     # from the .java-version file.
-    #     # https://github.com/actions/setup-java/issues/738
-    #     version="$(cat "${JAVA_VERSION_FILE}")"
-    #     if [[ "${version}" == temurin-* ]]; then
-    #       echo "distribution=termurin" >> "${GITHUB_OUTPUT}"
-    #       echo "version=${version#termurin-}" >> "${GITHUB_OUTPUT}"
-    #     elif [[ "${version}" == zulu-* ]]; then
-    #       echo "distribution=zulu" >> "${GITHUB_OUTPUT}"
-    #       echo "version=${version#zulu-}" >> "${GITHUB_OUTPUT}"
-    #     elif [[ "${version}" == adopt-openj9-* ]]; then
-    #       echo "distribution=adopt-openj9" >> "${GITHUB_OUTPUT}"
-    #       echo "version=${version#adopt-openj9-}" >> "${GITHUB_OUTPUT}"
-    #     elif [[ "${version}" == adopt-hotspot-* ]]; then
-    #       echo "distribution=adopt-hotspot" >> "${GITHUB_OUTPUT}"
-    #       echo "version=${version#adopt-hotspot-}" >> "${GITHUB_OUTPUT}"
-    #     elif [[ "${version}" == adopt-* ]]; then
-    #       echo "distribution=adopt" >> "${GITHUB_OUTPUT}"
-    #       echo "version=${version#adopt-}" >> "${GITHUB_OUTPUT}"
-    #     elif [[ "${version}" == liberica-* ]]; then
-    #       echo "distribution=liberica" >> "${GITHUB_OUTPUT}"
-    #       echo "version=${version#liberica-}" >> "${GITHUB_OUTPUT}"
-    #     elif [[ "${version}" == microsoft-* ]]; then
-    #       echo "distribution=microsoft" >> "${GITHUB_OUTPUT}"
-    #       echo "version=${version#microsoft-}" >> "${GITHUB_OUTPUT}"
-    #     elif [[ "${version}" == corretto-* ]]; then
-    #       echo "distribution=corretto" >> "${GITHUB_OUTPUT}"
-    #       echo "version=${version#corretto-}" >> "${GITHUB_OUTPUT}"
-    #     elif [[ "${version}" == semeru-* ]]; then
-    #       echo "distribution=semeru" >> "${GITHUB_OUTPUT}"
-    #       echo "version=${version#semeru-}" >> "${GITHUB_OUTPUT}"
-    #     elif [[ "${version}" == oracle-* ]]; then
-    #       echo "distribution=oracle" >> "${GITHUB_OUTPUT}"
-    #       echo "version=${version#oracle-}" >> "${GITHUB_OUTPUT}"
-    #     elif [[ "${version}" == dragonwell-* ]]; then
-    #       echo "distribution=dragonwell" >> "${GITHUB_OUTPUT}"
-    #       echo "version=${version#dragonwell-}" >> "${GITHUB_OUTPUT}"
-    #     elif [[ "${version}" == sapmachine-* ]]; then
-    #       echo "distribution=sapmachine" >> "${GITHUB_OUTPUT}"
-    #       echo "version=${version#sapmachine-}" >> "${GITHUB_OUTPUT}"
-    #     elif [[ "${version}" == graalvm-* ]]; then
-    #       echo "distribution=graalvm" >> "${GITHUB_OUTPUT}"
-    #       echo "version=${version#graalvm-}" >> "${GITHUB_OUTPUT}"
-    #     elif [[ "${version}" == jetbrains-* ]]; then
-    #       echo "distribution=jetbrains" >> "${GITHUB_OUTPUT}"
-    #       echo "version=${version#jetbrains-}" >> "${GITHUB_OUTPUT}"
-    #     fi
-
     - name: 'Set up GraalVM ${{ matrix.java }}'
       uses: 'graalvm/setup-graalvm@v1'
       with:
-        java-version: '21'
-        distribution: 'graalvm-community'
+        java-version: '${{ inputs.graalvm_java_version }}'
+        distribution: '${{ inputs.graalvm_java_distribution }}'
         github-token: '${{ inputs.github_token }}'
+        cache: '${{ inputs.graalvm_cache }}'
         native-image-job-reports: 'true'
-        cache: 'maven'
 
-    # - name: 'Setup Java'
-    #   uses: 'abcxyz/actions/.github/actions/setup-java-strict@09ff15858f2515a21985c660d771f48bfef514b6' # ratchet:exclude
-    #   with:
-    #     distribution: '${{ inputs.java_distribution }}'
-    #     java-version: '${{ inputs.java_version }}'
-    #     java-version-file: '${{ inputs.java_version_file }}'
-
-    # - name: 'Parse google java format version info'
-    #   id: 'google-java-info'
-    #   if: |
-    #     inputs.google_java_format_version_file != ''
-    #   shell: 'bash'
-    #   env:
-    #     GOOGLE_JAVA_FORMAT_VERSION_FILE: '${{ inputs.google_java_format_version_file }}'
-    #   run: |
-    #     version="$(cat "${GOOGLE_JAVA_FORMAT_VERSION_FILE}")"
-    #     echo "version=${version}" >> "${GITHUB_OUTPUT}"
-
-    - name: 'Download google-java-format'
+    - name: 'Download graalvm google-java-format binary'
       shell: 'bash'
       env:
-        # GOOGLE_JAVA_FORMAT_VERSION: '${{ steps.google-java-info.outputs.version || inputs.google_java_format_version }}'
         GOOGLE_JAVA_FORMAT_VERSION: '${{ inputs.google_java_format_version }}'
       run: |-
         BIN="${{ runner.tool_cache }}/google-java-format-${GOOGLE_JAVA_FORMAT_VERSION}"
@@ -143,9 +60,7 @@ runs:
           echo "Already installed!"
         else
           curl -sLfo "${BIN}" \
-            https://github.com/google/google-java-format/releases/download/v{GOOGLE_JAVA_FORMAT_VERSION}/google-java-format_linux-x86-64
-          # curl -sLfo "${BIN}" \
-          #   "https://github.com/google/google-java-format/releases/download/v${GOOGLE_JAVA_FORMAT_VERSION}/google-java-format-${GOOGLE_JAVA_FORMAT_VERSION}-all-deps.jar"
+            https://github.com/google/google-java-format/releases/download/v${GOOGLE_JAVA_FORMAT_VERSION}/google-java-format_linux-x86-64
           chmod +x "${BIN}"
         fi
 
@@ -153,13 +68,11 @@ runs:
       shell: 'bash'
       working-directory: '${{ inputs.directory }}'
       env:
-        GOOGLE_JAVA_FORMAT_VERSION: '${{ steps.google-java-info.outputs.version || inputs.google_java_format_version }}'
+        GOOGLE_JAVA_FORMAT_VERSION: '${{ inputs.google_java_format_version }}'
       run: |-
         shopt -s globstar
 
-        # java -jar "${{ runner.tool_cache }}/google-java-format-${GOOGLE_JAVA_FORMAT_VERSION}" -i **/*.java
-
-        "./${{ runner.tool_cache }}/google-java-format-${GOOGLE_JAVA_FORMAT_VERSION}" -i **/*.java
+        "${{ runner.tool_cache }}/google-java-format-${GOOGLE_JAVA_FORMAT_VERSION}" -i **/*.java
 
         if [ -n "$(git status -s -uall)" ]; then
           echo "::error title=Java formatting::Detected unformatted Java"
