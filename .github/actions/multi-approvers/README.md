@@ -75,7 +75,7 @@ jobs:
             }
 
       - name: 'Multi-approvers'
-        uses: 'abcxyz/pkg/.github/actions/multi-approvers'
+        uses: 'abcxyz/actions/.github/actions/multi-approvers'
         with:
           team: 'github-team-slug'
           token: '${{ steps.minty.outputs.token }}'
@@ -116,7 +116,7 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - name: 'Multi-approvers'
-        uses: 'abcxyz/pkg/.github/actions/multi-approvers'
+        uses: 'abcxyz/actions/.github/actions/multi-approvers'
         with:
           team: 'github-team-slug'
           token: '${{ secrets.MULTI_APPROVERS_TOKEN }}'
