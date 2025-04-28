@@ -51,13 +51,21 @@ jobs:
           LC_ALL: 'C'
         shell: 'bash'
         run: |-
+          set -euo pipefail
           # match_files determines if the current git repository has any files
           # matching the given pattern. This has been performance tested
           # against a shallow checkout of chromium (future changes should be
           # tested in the same manner).
           match_files() {
             local filepattern="${1}"
-            git ls-tree -r --name-only "${REF}" | grep -m 1 -E "${filepattern}" >/dev/null
+            matches="$(git ls-tree -r --name-only "${REF}" | grep -m 1 -E "${filepattern}")"
+            code="$?"
+            if [[ -n "${matches}" ]]; then
+              # Ignore exit codes because we found a match.
+              # Exit code 141 and higher may occur because we exit early.
+              return 0
+            fi
+            return "${code}"
           }
           find_dirs() {
             local filepattern="${1}"
