@@ -45,7 +45,7 @@ runs:
         GITHUB_TOKEN: '${{ inputs.github_token }}'
         TAGREP_LOG_TARGET: 'STDERR'
       run: |
-        tags="$(tagrep parse -type=request -format=raw -string-tags=DO_NOT_SUBMIT 2> tagrep.log)"
+        tags="$(tagrep parse -type=request -format=raw -string-tags=DO_NOT_SUBMIT,IGNORE_DO_NOT_SUBMIT 2> tagrep.log)"
         cat tagrep.log
         echo "tags -> ${tags}"
         echo "${tags}" >> "${GITHUB_ENV}"
@@ -54,8 +54,12 @@ runs:
       shell: 'bash'
       run: |
         if [[ -v DO_NOT_SUBMIT ]]; then
-          echo "::error::Pull Request description contains DO_NOT_SUBMIT=${DO_NOT_SUBMIT}. Blocking submit. Remove reference if this was in error."
-          exit 1
+          if [[ -v IGNORE_DO_NOT_SUBMIT ]]; then
+            echo "::warning::Encountered DO_NOT_SUBMIT but we are ignoring due to IGNORE_DO_NOT_SUBMIT=${IGNORE_DO_NOT_SUBMIT}"
+          else
+            echo "::error::Pull Request description contains DO_NOT_SUBMIT=${DO_NOT_SUBMIT}. Blocking submit. Remove reference if this was in error."
+            exit 1
+          fi
         fi
 
     - name: 'Check if changes contain DO_NOT_SUBMIT'
@@ -72,6 +76,10 @@ runs:
         # main branch and PR (feature) branch.
         FEATURE_BRANCH_BASE_REF="$(git merge-base "${PR_REF}" "${BASE_REF}")"
         if git diff "${FEATURE_BRANCH_BASE_REF}...${PR_REF}" | grep —ignore-case DO_NOT_SUBMIT; then
-          echo "::error::Changed files contains DO_NOT_SUBMIT. Blocking submit. Remove reference if this was in error."
-          exit 1
+          if [[ -v IGNORE_DO_NOT_SUBMIT ]]; then
+            echo "::warning::Encountered DO_NOT_SUBMIT but we are ignoring due to IGNORE_DO_NOT_SUBMIT=${IGNORE_DO_NOT_SUBMIT}"
+          else
+            echo "::error::Changed files contains DO_NOT_SUBMIT. Blocking submit. Remove reference if this was in error."
+            exit 1
+          fi
         fi
