@@ -38,17 +38,17 @@ permissions:
   pull-requests: 'read'
 
 jobs:
-  check-pr:
+  check:
     runs-on: 'ubuntu-latest'
     steps:
       - name: '[WANT_LGTM] Want LGTM Status'
         if: |
-          always() && contains(fromJSON('["pull_request", "pull_request_review"]'), github.event_name)
-        uses: './.github/actions/want-lgtm'
+          always()
+        uses: 'abcxyz/actions/.github/actions/want-lgtm@main' # ratchet:exclude
 
       - name: '[PULL_REQUEST] Check Description'
         if: |
           always()
-        uses: './.github/actions/pull-request-lint'
+        uses: 'abcxyz/actions/.github/actions/pull-request-lint@main' # ratchet:exclude
         with:
           pull_request_body: '${{ github.event.pull_request.body }}'
