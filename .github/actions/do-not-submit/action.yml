@@ -1,0 +1,77 @@
+# Copyright 2025 The Authors (see AUTHORS file)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: 'do-not-submit'
+description: 'Check for DO_NOT_SUBMIT.'
+inputs:
+  tagrep_version:
+    description: 'The version of Terraform to install and use.'
+    type: 'string'
+    required: false
+    default: '0.0.7'
+  github_token:
+    description: |-
+      GitHub PAT or App Token to use for authentication.
+    type: 'string'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Setup Tagrep'
+      uses: 'abcxyz/actions/.github/actions/setup-binary@main' # ratchet:exclude
+      with:
+        download_url: 'https://github.com/abcxyz/tagrep/releases/download/v${{ inputs.tagrep_version }}/tagrep_${{ inputs.tagrep_version }}_linux_amd64.tar.gz'
+        install_path: '${{ runner.temp }}/.tagrep'
+        binary_subpath: 'tagrep'
+        cache_key: '${{ runner.os }}_${{ runner.arch }}_tagrep_${{ inputs.tagrep_version }}'
+        add_to_path: true
+
+    - name: 'Tagrep PR vars'
+      id: 'tagrep'
+      shell: 'bash'
+      env:
+        GITHUB_TOKEN: '${{ inputs.github_token }}'
+        TAGREP_LOG_TARGET: 'STDERR'
+      run: |
+        tags="$(tagrep parse -type=request -format=raw -string-tags=DO_NOT_SUBMIT 2> tagrep.log)"
+        cat tagrep.log
+        echo "tags -> ${tags}"
+        echo "${tags}" >> "${GITHUB_ENV}"
+
+    - name: 'Check if DO_NOT_SUBMIT is set'
+      shell: 'bash'
+      run: |
+        if [[ -v DO_NOT_SUBMIT ]]; then
+          echo "::error::Pull Request description contains DO_NOT_SUBMIT=${DO_NOT_SUBMIT}. Blocking submit. Remove reference if this was in error."
+          exit 1
+        fi
+
+    - name: 'Check if changes contain DO_NOT_SUBMIT'
+      shell: 'bash'
+      # TODO: Support running in merge_group.
+      if: |-
+        ${{ contains(fromJSON('["pull_request", "pull_request_review", "pull_request_target"]'), github.event_name) }}
+      env:
+        BASE_REF: '${{ github.event.pull_request.base.sha }}'
+        PR_REF: '${{ github.event.pull_request.head.sha }}'
+      run: |
+        # The BASE_REF on github is sometimes only in the main branch.
+        # We can use git merge-base to find the intersection between the
+        # main branch and PR (feature) branch.
+        FEATURE_BRANCH_BASE_REF="$(git merge-base "${PR_REF}" "${BASE_REF}")"
+        if git diff "${FEATURE_BRANCH_BASE_REF}...${PR_REF}" | grep —ignore-case DO_NOT_SUBMIT; then
+          echo "::error::Changed files contains DO_NOT_SUBMIT. Blocking submit. Remove reference if this was in error."
+          exit 1
+        fi
