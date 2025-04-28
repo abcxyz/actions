@@ -16,7 +16,7 @@ name: 'want-lgtm'
 description: 'Confirm all reviewers approval status.'
 inputs:
   tagrep_version:
-    description: 'The version of Terraform to install and use.'
+    description: 'The version of tagrep to install and use.'
     type: 'string'
     required: false
     default: '0.0.7'
