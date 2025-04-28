@@ -40,7 +40,14 @@ permissions:
 jobs:
   check:
     runs-on: 'ubuntu-latest'
+    if: |
+      github.repository != 'abcxyz/actions'
     steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+        with:
+          fetch-depth: 1 # shallow clone
+
       - name: '[WANT_LGTM] Want LGTM Status'
         if: |
           always()
