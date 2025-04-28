@@ -54,12 +54,8 @@ runs:
       shell: 'bash'
       run: |
         if [[ -v DO_NOT_SUBMIT ]]; then
-          if [[ -v IGNORE_DO_NOT_SUBMIT ]]; then
-            echo "::warning::Encountered DO_NOT_SUBMIT but we are ignoring due to IGNORE_DO_NOT_SUBMIT=${IGNORE_DO_NOT_SUBMIT}"
-          else
-            echo "::error::Pull Request description contains DO_NOT_SUBMIT=${DO_NOT_SUBMIT}. Blocking submit. Remove reference if this was in error."
-            exit 1
-          fi
+          echo "::error::Pull Request description contains DO_NOT_SUBMIT=${DO_NOT_SUBMIT}. Blocking submit. Remove reference if this was in error."
+          exit 1
         fi
 
     - name: 'Check if changes contain DO_NOT_SUBMIT'
@@ -79,7 +75,9 @@ runs:
           if [[ -v IGNORE_DO_NOT_SUBMIT ]]; then
             echo "::warning::Encountered DO_NOT_SUBMIT but we are ignoring due to IGNORE_DO_NOT_SUBMIT=${IGNORE_DO_NOT_SUBMIT}"
           else
-            echo "::error::Changed files contains DO_NOT_SUBMIT. Blocking submit. Remove reference if this was in error."
+            echo "::error::Changed files contains DO_NOT_SUBMIT. Blocking submit."
+            echo "::error::Remove reference if this was in error OR add a line to the end of your PR description like."
+            echo "::error::IGNORE_DO_NOT_SUBMIT=My reason for ignoring (e.g. intentional code changes)"
             exit 1
           fi
         fi
