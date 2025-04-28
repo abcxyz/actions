@@ -42,7 +42,7 @@ runs:
       id: 'tagrep'
       shell: 'bash'
       env:
-        GITHUB_TOKEN: '${{ inputs.github_token }}'
+        GITHUB_TOKEN: '${{ github.token }}'
         TAGREP_LOG_TARGET: 'STDERR'
       run: |
         tags="$(tagrep parse -type=request -format=raw -string-tags=WANT_LGTM 2> tagrep.log)"
