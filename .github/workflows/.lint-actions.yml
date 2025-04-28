@@ -120,10 +120,6 @@ jobs:
       ##############
       ## JAVA ######
       ##############
-      JAVA_LINT_JAVA_VERSION: |-
-        ${{ vars.JAVA_LINT_JAVA_VERSION }}
-      JAVA_LINT_JAVA_DISTRIBUTION: |-
-        ${{ vars.JAVA_LINT_JAVA_VERSION || 'zulu' }}
       JAVA_LINT_GOOGLE_JAVA_FORMAT_VERSION: |-
         ${{ vars.JAVA_LINT_GOOGLE_JAVA_FORMAT_VERSION || '1.25.2' }}
       JAVA_LINT_DIRECTORY: |-
@@ -171,10 +167,9 @@ jobs:
           matrix.lint-target == 'java'
         uses: './.github/actions/lint-java' # ratchet:exclude
         with:
-          java_version: '${{ env.JAVA_LINT_JAVA_VERSION }}'
-          java_distribution: '${{ env.JAVA_LINT_JAVA_DISTRIBUTION }}'
           google_java_format_version: '${{ env.JAVA_LINT_GOOGLE_JAVA_FORMAT_VERSION }}'
           directory: '${{ env.JAVA_LINT_DIRECTORY }}'
+          github_token: '${{ secrets.GITHUB_TOKEN }}'
 
       - name: '[JAVASCRIPT] Lint Javascript'
         if: |

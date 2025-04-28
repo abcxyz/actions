@@ -15,14 +15,6 @@
 name: 'lint-java'
 description: 'Lint java against the abcxyz style guide.'
 inputs:
-  java_version:
-    description: 'The version of Java to install and use.'
-    type: 'string'
-    required: true
-  java_distribution:
-    description: 'The distibution of Java to use.'
-    type: 'string'
-    default: 'zulu'
   google_java_format_version:
     description: 'The version of google-java-format to use. This must be the full version with no leading "v" prefix.'
     type: 'string'
@@ -31,36 +23,60 @@ inputs:
     description: 'Directory in which Java files reside.'
     type: 'string'
     default: '.'
+  graalvm_java_version:
+    description: 'The version of Java to install and use for the graalvm compiled google-java-format binary.'
+    type: 'string'
+    default: '21'
+  graalvm_java_distribution:
+    description: 'The distibution of Java to use for the graalvm compiled google-java-format binary.'
+    type: 'string'
+    default: 'graalvm-community'
+  graalvm_cache:
+    description: 'The java cache to use with graalvm.'
+    type: 'string'
+    default: 'maven'
+  github_token:
+    description: |-
+      GitHub PAT or App Token to use for authentication.
+    type: 'string'
+    required: true
 
 runs:
   using: 'composite'
   steps:
-    - name: 'Setup Java'
-      uses: 'actions/setup-java@c5195efecf7bdfc987ee8bae7a71cb8b11521c00' # ratchet:actions/setup-java@v4
+    - name: 'Set up GraalVM ${{ matrix.java }}'
+      uses: 'graalvm/setup-graalvm@01ed653ac833fe80569f1ef9f25585ba2811baab' # ratchet:graalvm/setup-graalvm@v1
       with:
-        distribution: '${{ inputs.java_distribution }}'
-        java-version: '${{ inputs.java_version }}'
+        java-version: '${{ inputs.graalvm_java_version }}'
+        distribution: '${{ inputs.graalvm_java_distribution }}'
+        github-token: '${{ inputs.github_token }}'
+        cache: '${{ inputs.graalvm_cache }}'
+        native-image-job-reports: 'true'
 
-    - name: 'Download google-java-format'
+    - name: 'Download graalvm google-java-format binary'
       shell: 'bash'
+      env:
+        GOOGLE_JAVA_FORMAT_VERSION: '${{ inputs.google_java_format_version }}'
       run: |-
-        BIN='${{ runner.tool_cache }}/google-java-format-${{ inputs.google_java_format_version }}'
+        BIN="${{ runner.tool_cache }}/google-java-format-${GOOGLE_JAVA_FORMAT_VERSION}"
 
         if [[ -x "${BIN}" ]]; then
           echo "Already installed!"
         else
           curl -sLfo "${BIN}" \
-            "https://github.com/google/google-java-format/releases/download/v${{ inputs.google_java_format_version }}/google-java-format-${{ inputs.google_java_format_version }}-all-deps.jar"
+            https://github.com/google/google-java-format/releases/download/v${GOOGLE_JAVA_FORMAT_VERSION}/google-java-format_linux-x86-64
           chmod +x "${BIN}"
         fi
 
     - name: 'Check formatting'
       shell: 'bash'
       working-directory: '${{ inputs.directory }}'
+      env:
+        GOOGLE_JAVA_FORMAT_VERSION: '${{ inputs.google_java_format_version }}'
       run: |-
         shopt -s globstar
 
-        java -jar ${{ runner.tool_cache }}/google-java-format-${{ inputs.google_java_format_version }} -i **/*.java
+        "${{ runner.tool_cache }}/google-java-format-${GOOGLE_JAVA_FORMAT_VERSION}" -i **/*.java
 
         if [ -n "$(git status -s -uall)" ]; then
           echo "::error title=Java formatting::Detected unformatted Java"
