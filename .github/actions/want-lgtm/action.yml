@@ -20,6 +20,11 @@ inputs:
     type: 'string'
     required: false
     default: '0.0.7'
+  github_token:
+    description: |-
+      GitHub PAT or App Token to use for authentication.
+    type: 'string'
+    required: true
 
 runs:
   using: 'composite'
