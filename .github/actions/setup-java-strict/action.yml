@@ -38,7 +38,7 @@ runs:
         # https://github.com/actions/setup-java/issues/738
         version="$(cat "${JAVA_VERSION_FILE}")"
         if [[ "${version}" == temurin-* ]]; then
-          echo "distribution=termurin" >> "${GITHUB_OUTPUT}"
+          echo "distribution=temurin" >> "${GITHUB_OUTPUT}"
         elif [[ "${version}" == zulu-* ]]; then
           echo "distribution=zulu" >> "${GITHUB_OUTPUT}"
         elif [[ "${version}" == adopt-openj9-* ]]; then
