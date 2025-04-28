@@ -34,5 +34,3 @@ jobs:
     steps:
       - name: '[WANT_LGTM] Want LGTM Status'
         uses: './.github/actions/want-lgtm'
-        with:
-          github_token: '${{ secrets.GITHUB_TOKEN }}'

@@ -52,8 +52,6 @@ jobs:
         if: |
           always()
         uses: 'abcxyz/actions/.github/actions/want-lgtm@main' # ratchet:exclude
-        with:
-          github_token: '${{ secrets.GITHUB_TOKEN }}'
 
       - name: '[PULL_REQUEST] Check Description'
         if: |

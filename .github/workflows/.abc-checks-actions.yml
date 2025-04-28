@@ -50,8 +50,6 @@ jobs:
         if: |
           always() && contains(fromJSON('["pull_request", "pull_request_review"]'), github.event_name)
         uses: './.github/actions/want-lgtm'
-        with:
-          github_token: '${{ secrets.GITHUB_TOKEN }}'
 
       - name: '[PULL_REQUEST] Check Description'
         if: |
