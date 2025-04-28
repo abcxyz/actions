@@ -20,11 +20,6 @@ inputs:
     type: 'string'
     required: false
     default: '0.0.7'
-  github_token:
-    description: |-
-      GitHub PAT or App Token to use for authentication.
-    type: 'string'
-    required: true
 
 runs:
   using: 'composite'
@@ -42,7 +37,7 @@ runs:
       id: 'tagrep'
       shell: 'bash'
       env:
-        GITHUB_TOKEN: '${{ inputs.github_token }}'
+        GITHUB_TOKEN: '${{ github.token }}'
         TAGREP_LOG_TARGET: 'STDERR'
       run: |
         tags="$(tagrep parse -type=request -format=raw -string-tags=DO_NOT_SUBMIT,IGNORE_DO_NOT_SUBMIT 2> tagrep.log)"
