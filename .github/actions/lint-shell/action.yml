@@ -27,14 +27,10 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: 'Cleanup shellcheck'
+    - name: 'Remove root shellcheck'
       shell: 'bash'
       run: |
-        shellcheck_path="$(which shellcheck)"
-        echo "Shellcheck: ${shellcheck_path}"
-        if [[ "${shellcheck_path}" != "${{ runner.temp }}/.shellcheck" ]]; then
-          rm -rf "${shellcheck_path}"
-        fi
+        sudo rm -rf /usr/bin/shellcheck
 
     - name: 'Setup Shellcheck'
       uses: 'abcxyz/actions/.github/actions/setup-binary@main' # ratchet:exclude
