@@ -35,8 +35,10 @@ runs:
     - name: 'Check PR Description Not Empty'
       id: 'non-empty-pr-desc-check'
       shell: 'bash'
+      env:
+        PR_BODY: '${{ inputs.pull_request_body }}'
       run: |
-        if [[ -z "${{ inputs.pull_request_body }}" ]]; then
+        if [[ -z "${PR_BODY}" ]]; then
           echo "Error: Pull request description cannot be empty."
           exit 1
         else
