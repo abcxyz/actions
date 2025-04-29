@@ -55,7 +55,7 @@ jobs:
               --output "${MEMBERS_JSON}"
 
           # Save the result to an output.
-          echo "::notice::Downloaded members.json to ${MEMBERS_JSON}"
+          echo "::debug::Downloaded members.json to ${MEMBERS_JSON}"
           echo "output-file=${MEMBERS_JSON}" >> "${GITHUB_OUTPUT}"
 
       - name: 'Download multi-approvers.js'
@@ -73,7 +73,7 @@ jobs:
             --output "${MULTI_APPROVERS_JS}"
 
           # Save the result to an output.
-          echo "::notice::Downloaded multi-approvers.js to ${MULTI_APPROVERS_JS}"
+          echo "::debug::Downloaded multi-approvers.js to ${MULTI_APPROVERS_JS}"
           echo "output-file=${MULTI_APPROVERS_JS}" >> "${GITHUB_OUTPUT}"
 
       - name: 'Check approver requirements'

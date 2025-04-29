@@ -64,7 +64,7 @@ runs:
           --output "${YAMLLINT_YAML}"
 
         # Save the result to an output.
-        echo "::notice::Wrote configuration file to ${YAMLLINT_YAML}"
+        echo "::debug::Wrote configuration file to ${YAMLLINT_YAML}"
         echo "output-file=${YAMLLINT_YAML}" >> "${GITHUB_OUTPUT}"
 
     - name: 'Lint (default configuration)'

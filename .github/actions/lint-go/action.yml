@@ -66,7 +66,7 @@ runs:
           --output "${GOLANGCI_YML}"
 
         # Save the result to an output.
-        echo "::notice::Wrote configuration file to ${GOLANGCI_YML}"
+        echo "::debug::Wrote configuration file to ${GOLANGCI_YML}"
         echo "output-file=${GOLANGCI_YML}" >> "${GITHUB_OUTPUT}"
 
     - name: 'Lint (default configuration)'
