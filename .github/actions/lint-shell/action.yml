@@ -54,3 +54,9 @@ runs:
             --format=tty \
             --color=always \
             {} +
+
+    - name: 'Check install path'
+      if: 'always()'
+      shell: 'bash'
+      run: |
+        ls -al '${{ runner.temp }}/.shellcheck'
