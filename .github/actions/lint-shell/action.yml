@@ -19,10 +19,32 @@ inputs:
     description: 'File or directory containing shell files to lint.'
     type: 'string'
     default: '.'
+  shellcheck_version:
+    description: 'The version of actionlint to install and use.'
+    type: 'string'
+    default: '0.10.0'
 
 runs:
   using: 'composite'
   steps:
+    - name: 'Cleanup shellcheck'
+      shell: 'bash'
+      run: |
+        shellcheck_path="$(which shellcheck)"
+        echo "Shellcheck: ${shellcheck_path}"
+        if [[ "${shellcheck_path}" != "${{ runner.temp }}/.shellcheck" ]]; then
+          rm -rf "${shellcheck_path}"
+        fi
+
+    - name: 'Setup Shellcheck'
+      uses: 'abcxyz/actions/.github/actions/setup-binary@main' # ratchet:exclude
+      with:
+        download_url: 'https://github.com/koalaman/shellcheck/releases/download/v${{ inputs.shellcheck_version }}/shellcheck-v${{ inputs.shellcheck_version }}.linux.x86_64.tar.xz'
+        install_path: '${{ runner.temp }}/.shellcheck'
+        binary_subpath: 'shellcheck'
+        cache_key: '${{ runner.os }}_${{ runner.arch }}_shellcheck_${{ inputs.shellcheck_version }}'
+        add_to_path: true
+
     - name: 'Lint Shell'
       env:
         TARGET: '${{ inputs.target }}'
