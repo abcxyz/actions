@@ -37,7 +37,7 @@ runs:
       with:
         download_url: 'https://github.com/koalaman/shellcheck/releases/download/v${{ inputs.shellcheck_version }}/shellcheck-v${{ inputs.shellcheck_version }}.linux.x86_64.tar.xz'
         install_path: '${{ runner.temp }}/.shellcheck'
-        binary_subpath: 'shellcheck-v${{ inputs.shellcheck_version }}'
+        binary_subpath: 'shellcheck-v${{ inputs.shellcheck_version }}/shellcheck'
         cache_key: '${{ runner.os }}_${{ runner.arch }}_shellcheck_${{ inputs.shellcheck_version }}'
         add_to_path: true
 
