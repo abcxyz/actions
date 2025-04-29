@@ -80,7 +80,7 @@ jobs:
           GOMOD_DIRS="$(find_dirs '(go.mod$)')"
           if [[ -n "${GOMOD_DIRS}" ]]; then
             GOMOD_DIRS_JSON="$(to_json "${GOMOD_DIRS}")"
-            echo "::notice::Found go.mod directories: ${GOMOD_DIRS_JSON}"
+            echo "::debug::Found go.mod directories: ${GOMOD_DIRS_JSON}"
             echo "gomod-dirs=${GOMOD_DIRS_JSON}" >> "${GITHUB_OUTPUT}"
           fi
           declare -a TARGETS=()
@@ -106,7 +106,7 @@ jobs:
             TARGETS+=("github" "ratchet")
           fi
           LINT_TARGETS="$(jq --compact-output --null-input '$ARGS.positional' --args -- "${TARGETS[@]}")"
-          echo "::notice::Found lint targets: ${LINT_TARGETS}"
+          echo "::debug::Found lint targets: ${LINT_TARGETS}"
           echo "lint-targets=${LINT_TARGETS}" >> "${GITHUB_OUTPUT}"
 
   lint:
