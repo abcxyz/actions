@@ -37,7 +37,6 @@ permissions:
   actions: 'write'
   pull-requests: 'read'
 
-
 jobs:
   approval:
     uses: './.github/workflows/want-lgtm-all.yml' # ratchet:exclude
@@ -47,7 +46,10 @@ jobs:
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+
       - name: '[PULL REQUEST] lint actions'
+        if: |-
+          ${{ github.event_name == 'pull_request' && github.event.action == 'opened' }}
         uses: './.github/actions/pull-request-lint'
         with:
           pull_request_body: '${{ github.event.pull_request.body }}'

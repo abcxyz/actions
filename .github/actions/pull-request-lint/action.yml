@@ -12,17 +12,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# This action is required to generate a pull request with signed commits using a bot or PAT
-# This is required to allow automation to pass organizational rulesets which include signed commits.
-# The commits will show signed by github.com.
-#
-# Alternatives to this solution were deemed infeasible:
-#  - Add exceptions for bots to the signed commits rulesets or use a certificate per bot identity, this is
-#    not ideal because then we have to maange secrets
-#  - Add exceptions for bots to the Google CLA, this would show status checks as failed which is not desirable
-
 name: 'PR Description Check'
-description: 'This Action checks if the pull request has a non-empty description.'
+description: |-
+  This Action checks if the pull request has a non-empty description. It should
+  only be run when a Pull Request is opened.
 
 inputs:
   pull_request_body:
@@ -32,16 +25,28 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: 'Check PR Description Not Empty'
-      id: 'non-empty-pr-desc-check'
-      shell: 'bash'
+    - uses: 'actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea' # ratchet:actions/github-script@v7
       env:
-        PR_BODY: '${{ inputs.pull_request_body }}'
-      run: |
-        if [[ -z "${PR_BODY}" ]]; then
-          echo "Error: Pull request description cannot be empty."
-          exit 1
-        else
-          echo "Pull request description is not empty."
-          exit 0
-        fi
+        PULL_REQUEST_BODY: '${{ inputs.pull_request_body }}'
+      with:
+        script: |-
+          const pullRequestBody = (process.env.PULL_REQUEST_BODY || '').trim();
+          if (pullRequestBody) {
+            return;
+          }
+
+          core.warning(`Consider adding a description to the Pull Request`, {
+            title: `Missing PR Description`,
+          });
+
+          const msg =
+            `Hi @${context.actor} :wave:!\n` +
+            `\n` +
+            `⚠️ Please consider adding a description to your Pull Request for good repository history and hygiene.`;
+
+          await github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: msg,
+          });
