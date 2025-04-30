@@ -1,0 +1,50 @@
+# Copyright 2025 The Authors (see AUTHORS file)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: 'reviews-actions'
+
+on:
+  # For actions that the author takes:
+  pull_request:
+    types:
+      - 'edited'                 # For adding/removing WANT_LGTM=all tag.
+      - 'review_requested'       # For adding reviewers.
+      - 'review_request_removed' # For removing reviewers.
+  # For actions that the reviewer takes:
+  pull_request_review:
+    types:
+      - 'submitted' # For when a reviewer approves.
+      - 'dismissed' # For when a reviewer removes approval.
+
+concurrency:
+  group: '${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}'
+  cancel-in-progress: true
+
+permissions:
+  actions: 'write'
+  pull-requests: 'read'
+
+jobs:
+  check:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+        with:
+          fetch-depth: 1 # shallow clone
+
+      - name: '[WANT_LGTM] Want LGTM Status'
+        if: |
+          always() && contains(fromJSON('["pull_request", "pull_request_review"]'), github.event_name)
+        uses: './.github/actions/want-lgtm'

@@ -12,22 +12,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: 'abc-checks'
+name: 'pr-checks-actions'
 
 on:
   pull_request:
     types:
       - 'opened'
-      - 'edited'
-      - 'reopened'
-      - 'synchronize'
-      - 'ready_for_review'
-      - 'review_requested'
-      - 'review_request_removed'
-  pull_request_review:
-    types:
-      - 'submitted'
-      - 'dismissed'
+      - 'closed'
 
 concurrency:
   group: '${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}'
@@ -40,22 +31,15 @@ permissions:
 jobs:
   check:
     runs-on: 'ubuntu-latest'
-    if: |
-      github.repository != 'abcxyz/actions'
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
         with:
           fetch-depth: 1 # shallow clone
 
-      - name: '[WANT_LGTM] Want LGTM Status'
-        if: |
-          always()
-        uses: 'abcxyz/actions/.github/actions/want-lgtm@main' # ratchet:exclude
-
       - name: '[PULL_REQUEST] Check Description'
         if: |
-          always()
-        uses: 'abcxyz/actions/.github/actions/pull-request-lint@main' # ratchet:exclude
+          always() && github.event_name == 'pull_request' && github.event.action == 'opened'
+        uses: './.github/actions/pull-request-checks'
         with:
           pull_request_body: '${{ github.event.pull_request.body }}'

@@ -12,22 +12,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: 'abc-checks'
+name: 'reviews'
 
 on:
+  # For actions that the author takes:
   pull_request:
     types:
-      - 'opened'
-      - 'edited'
-      - 'reopened'
-      - 'synchronize'
-      - 'ready_for_review'
-      - 'review_requested'
-      - 'review_request_removed'
+      - 'edited'                 # For adding/removing WANT_LGTM=all tag.
+      - 'review_requested'       # For adding reviewers.
+      - 'review_request_removed' # For removing reviewers.
+  # For actions that the reviewer takes:
   pull_request_review:
     types:
-      - 'submitted'
-      - 'dismissed'
+      - 'submitted' # For when a reviewer approves.
+      - 'dismissed' # For when a reviewer removes approval.
 
 concurrency:
   group: '${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}'
@@ -40,6 +38,8 @@ permissions:
 jobs:
   check:
     runs-on: 'ubuntu-latest'
+    if: |
+      github.repository != 'abcxyz/actions'
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
@@ -48,12 +48,5 @@ jobs:
 
       - name: '[WANT_LGTM] Want LGTM Status'
         if: |
-          always() && contains(fromJSON('["pull_request", "pull_request_review"]'), github.event_name)
-        uses: './.github/actions/want-lgtm'
-
-      - name: '[PULL_REQUEST] Check Description'
-        if: |
           always()
-        uses: './.github/actions/pull-request-lint'
-        with:
-          pull_request_body: '${{ github.event.pull_request.body }}'
+        uses: 'abcxyz/actions/.github/actions/want-lgtm@main' # ratchet:exclude
