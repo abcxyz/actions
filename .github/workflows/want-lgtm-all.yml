@@ -33,4 +33,4 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - name: '[WANT_LGTM] Want LGTM Status'
-        uses: './.github/actions/want-lgtm'
+        uses: 'abcxyz/actions/.github/actions/want-lgtm@main' # ratchet:exclude
