@@ -27,11 +27,6 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: 'Remove root shellcheck'
-      shell: 'bash'
-      run: |
-        sudo rm -rf /usr/bin/shellcheck
-
     - name: 'Setup Shellcheck'
       uses: 'abcxyz/actions/.github/actions/setup-binary@main' # ratchet:exclude
       with:

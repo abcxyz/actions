@@ -27,11 +27,6 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: 'Remove root shellcheck'
-      shell: 'bash'
-      run: |
-        sudo rm -rf /usr/bin/shellcheck
-
     - name: 'Setup Shellcheck'
       uses: 'abcxyz/actions/.github/actions/setup-binary@main' # ratchet:exclude
       with:
@@ -46,6 +41,7 @@ runs:
         TARGET: '${{ inputs.target }}'
       shell: 'bash'
       run: |-
+        shellcheck --version
         find "${TARGET}" \( -type f -name '*.sh' -or -name '*.bash' -or -name '*.zsh' \) -exec \
           shellcheck \
             --check-sourced \
