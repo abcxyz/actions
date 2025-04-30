@@ -18,7 +18,6 @@ on:
   # For actions that the author takes:
   pull_request:
     types:
-      - 'synchronize'            # For ensuring that it runs on every new commit so it can be marked required.
       - 'edited'                 # For adding/removing WANT_LGTM=all tag.
       - 'review_requested'       # For adding reviewers.
       - 'review_request_removed' # For removing reviewers.
