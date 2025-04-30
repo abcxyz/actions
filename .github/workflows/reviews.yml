@@ -15,17 +15,11 @@
 name: 'reviews'
 
 on:
-  # For actions that the author takes:
+  # Note that for org required workflows:
+  # "Any filters you specify for the supported events are ignored
+  # - for example, branches, branches-ignore, paths, types and so on."
+  # https://docs.github.com/en/enterprise-cloud@latest/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#supported-event-triggers
   pull_request:
-    types:
-      - 'edited'                 # For adding/removing WANT_LGTM=all tag.
-      - 'review_requested'       # For adding reviewers.
-      - 'review_request_removed' # For removing reviewers.
-  # For actions that the reviewer takes:
-  pull_request_review:
-    types:
-      - 'submitted' # For when a reviewer approves.
-      - 'dismissed' # For when a reviewer removes approval.
 
 concurrency:
   group: '${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}'
@@ -44,7 +38,8 @@ jobs:
       - name: 'Checkout'
         uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
         with:
-          fetch-depth: 1 # shallow clone
+          fetch-depth: 1 # shallow checkout
+          ref: '${{ github.event.pull_request.head.sha }}'
 
       - name: '[WANT_LGTM] Want LGTM Status'
         if: |
