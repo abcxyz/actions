@@ -15,6 +15,9 @@
 name: 'pr-checks-actions'
 
 on:
+  # These activity types are not supported on org required workflows yet. But
+  # we can still use them on this repo directly.
+  # https://docs.github.com/en/enterprise-cloud@latest/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#supported-event-triggers
   pull_request:
     types:
       - 'opened'
