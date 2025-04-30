@@ -41,7 +41,6 @@ runs:
         TARGET: '${{ inputs.target }}'
       shell: 'bash'
       run: |-
-        shellcheck --version
         find "${TARGET}" \( -type f -name '*.sh' -or -name '*.bash' -or -name '*.zsh' \) -exec \
           shellcheck \
             --check-sourced \
