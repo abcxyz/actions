@@ -42,6 +42,6 @@ jobs:
       - name: '[PULL_REQUEST] Checks'
         if: |
           always() && github.event_name == 'pull_request' && github.event.action == 'opened'
-        uses: 'abcxyz/actions/.github/actions/pull-request-checks@main' # ratchet:exclude
+        uses: 'abcxyz/actions/.github/actions/pull-request-check-description@main' # ratchet:exclude
         with:
           pull_request_body: '${{ github.event.pull_request.body }}'

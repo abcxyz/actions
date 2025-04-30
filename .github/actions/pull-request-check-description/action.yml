@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: 'Pull Request Checks'
+name: 'Pull Request Check Description'
 description: |-
   This Action checks if the pull request has a non-empty description. It should
   only be run when a Pull Request is opened.
