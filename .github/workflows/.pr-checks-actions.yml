@@ -39,8 +39,8 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - name: '[PULL_REQUEST] Check Description'
-        if: |
-          always() && github.event_name == 'pull_request' && github.event.action == 'opened'
+        # if: |
+        #   always() && github.event_name == 'pull_request' && github.event.action == 'opened'
         uses: './.github/actions/pull-request-check-description'
         with:
           pull_request_body: '${{ github.event.pull_request.body }}'
