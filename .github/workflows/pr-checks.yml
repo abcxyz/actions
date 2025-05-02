@@ -37,7 +37,7 @@ jobs:
     steps:
       - name: '[PULL_REQUEST] Checks'
         if: |
-          always()
+          always() && github.event_name == 'pull_request' && github.event.action == 'opened'
         uses: 'abcxyz/actions/.github/actions/pull-request-check-description@main' # ratchet:exclude
         with:
           pull_request_body: '${{ github.event.pull_request.body }}'
