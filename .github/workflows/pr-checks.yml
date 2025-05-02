@@ -33,11 +33,11 @@ jobs:
   check:
     runs-on: 'ubuntu-latest'
     if: |
-      github.repository != 'abcxyz/actions'
+      github.repository != 'abcxyz/actions' && (github.event.action == 'opened' || github.event.action == 'closed')
     steps:
       - name: '[PULL_REQUEST] Checks'
         if: |
-          always() && github.event_name == 'pull_request' && github.event.action == 'opened'
+          always()
         uses: 'abcxyz/actions/.github/actions/pull-request-check-description@main' # ratchet:exclude
         with:
           pull_request_body: '${{ github.event.pull_request.body }}'
