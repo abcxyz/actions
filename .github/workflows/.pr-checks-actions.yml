@@ -23,12 +23,12 @@ concurrency:
 
 permissions:
   actions: 'write'
-  issues: 'write'
+  pull-requests: 'write'
 
 jobs:
   check:
-    # if: |
-    #   github.event.action == 'opened' || github.event.action == 'closed'
+    if: |
+      github.event.action == 'opened' || github.event.action == 'closed'
     runs-on: 'ubuntu-latest'
     steps:
       - name: 'Checkout'
@@ -38,8 +38,8 @@ jobs:
           ref: '${{ github.event.pull_request.head.sha }}'
 
       - name: '[PULL_REQUEST] Check Description'
-        # if: |
-        #   always() && github.event_name == 'pull_request' && github.event.action == 'opened'
+        if: |
+          always() && github.event_name == 'pull_request' && github.event.action == 'opened'
         uses: './.github/actions/pull-request-check-description'
         with:
           pull_request_body: '${{ github.event.pull_request.body }}'
