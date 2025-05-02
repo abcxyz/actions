@@ -16,9 +16,6 @@ name: 'pr-checks-actions'
 
 on:
   pull_request:
-    types:
-      - 'opened'
-      - 'closed'
 
 concurrency:
   group: '${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}'
@@ -26,16 +23,19 @@ concurrency:
 
 permissions:
   actions: 'write'
-  pull-requests: 'read'
+  pull-requests: 'write'
 
 jobs:
   check:
+    if: |
+      github.event.action == 'opened' || github.event.action == 'closed'
     runs-on: 'ubuntu-latest'
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
         with:
-          fetch-depth: 1 # shallow clone
+          fetch-depth: 1 # shallow checkout
+          ref: '${{ github.event.pull_request.head.sha }}'
 
       - name: '[PULL_REQUEST] Check Description'
         if: |

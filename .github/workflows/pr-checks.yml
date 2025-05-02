@@ -15,10 +15,11 @@
 name: 'pr-checks'
 
 on:
+  # Note that for org required workflows:
+  # "Any filters you specify for the supported events are ignored
+  # - for example, branches, branches-ignore, paths, types and so on."
+  # https://docs.github.com/en/enterprise-cloud@latest/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#supported-event-triggers
   pull_request:
-    types:
-      - 'opened'
-      - 'closed'
 
 concurrency:
   group: '${{ github.workflow }}-${{ github.event_name }}-${{ github.head_ref || github.ref }}'
@@ -26,19 +27,14 @@ concurrency:
 
 permissions:
   actions: 'write'
-  pull-requests: 'read'
+  pull-requests: 'write'
 
 jobs:
   check:
     runs-on: 'ubuntu-latest'
     if: |
-      github.repository != 'abcxyz/actions'
+      github.repository != 'abcxyz/actions' && (github.event.action == 'opened' || github.event.action == 'closed')
     steps:
-      - name: 'Checkout'
-        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
-        with:
-          fetch-depth: 1 # shallow clone
-
       - name: '[PULL_REQUEST] Checks'
         if: |
           always() && github.event_name == 'pull_request' && github.event.action == 'opened'
