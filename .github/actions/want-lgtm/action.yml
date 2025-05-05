@@ -160,7 +160,7 @@ runs:
             .filter((w) =>
               w.pull_requests.map((p) => p.number).includes(context.issue.number)
             )
-            .sort((x) => x.id);
+            .sort((a, b) => b.run_number - a.run_number);
 
           // retrigger the latest run for our unsuccessful workflow run
           if (unsuccessfulRuns.length > 0) {
