@@ -68,6 +68,11 @@ inputs:
     required: false
     default: '3'
 
+outputs:
+  pr_number:
+    description: 'The value that this action will output.'
+    value: '${{ steps.create-update-pull-request.outputs.number }}'
+
 runs:
   using: 'composite'
   steps:
