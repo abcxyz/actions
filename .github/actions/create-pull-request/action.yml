@@ -298,10 +298,11 @@ runs:
             await Promise.all(
               deletedPaths.map(async (file) => {
                 core.debug("processing deleted file: ${file}...")
-                const isExec = !!((await fs.stat(file).mode) & fs.constants.S_IXUSR);
+                // commented becausefs.stat will fail on a deleted file
+                // const isExec = !!((await fs.stat(file).mode) & fs.constants.S_IXUSR);
                 prCommitTree.push({
                   path: file,
-                  mode: isExec ? EXEC_MODE : FILE_MODE,
+                  mode: "100644" # temp fix: default to file mode,
                   type: "blob",
                   sha: null,
                 });
