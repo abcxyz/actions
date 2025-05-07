@@ -302,7 +302,7 @@ runs:
                 // const isExec = !!((await fs.stat(file).mode) & fs.constants.S_IXUSR);
                 prCommitTree.push({
                   path: file,
-                  mode: "100644" # temp fix: default to file mode,
+                  mode: "100644", // temp fix: default to file mode
                   type: "blob",
                   sha: null,
                 });
