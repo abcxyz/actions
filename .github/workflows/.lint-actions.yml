@@ -182,13 +182,13 @@ jobs:
       - name: '[JAVASCRIPT] Lint Javascript'
         if: |
           matrix.lint-target == 'javascript'
-        uses: './.github/actions/lint-javascript' # ratchet:exclude
+        run: |-
+          echo "TODO: Lint javascript"
 
       - name: '[TYPESCRIPT] Lint Typescript'
         if: |
           matrix.lint-target == 'typescript'
-        run: |-
-          echo "TODO: Lint typescript"
+        uses: './.github/actions/lint-typescript' # ratchet:exclude
 
       - name: '[SHELL] Lint Shell'
         if: |

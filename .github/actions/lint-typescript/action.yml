@@ -12,8 +12,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: 'lint-javascript'
-description: 'Lint javascript against the abcxyz style guide.'
+name: 'lint-typescript'
+description: 'Lint typescript against the abcxyz style guide.'
 inputs:
   gts_version:
     description: 'The version of gts to use. This must be the full version with no leading "v" prefix.'
@@ -67,7 +67,7 @@ runs:
         shopt -s globstar
 
         if [[ "${IS_ESLINT}" == "true" ]]; then
-          npx eslint "**/*.js"
+          npx eslint "**/*.ts"
         else
-          npx gts lint "**/*.js"
+          npx gts lint "**/*.ts"
         fi
