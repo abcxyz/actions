@@ -19,10 +19,6 @@ inputs:
     description: 'The version of gts to use. This must be the full version with no leading "v" prefix.'
     type: 'string'
     default: '6.0.2'
-  eslint_version:
-    description: 'The version of eslint to use. This must be the full version with no leading "v" prefix.'
-    type: 'string'
-    default: '9.26.0'
   directory:
     description: 'Directory in which Java files reside.'
     type: 'string'
@@ -36,7 +32,7 @@ runs:
       shell: 'bash'
       working-directory: '${{ inputs.directory }}'
       run: |
-        if [[ -f  eslint.config.js ]]; then
+        if [[ -f eslint.config.js || -f eslint.config.mjs || -f eslint.config.cjs ]]; then
           echo "found=true" >> "${GITHUB_OUTPUT}"
         fi
 
@@ -49,15 +45,6 @@ runs:
       run: |
         npm install "gts@${GTS_VERSION}"
 
-    - name: 'Install ESLINT'
-      if: |
-        steps.is-eslint.outputs.found == 'true'
-      shell: 'bash'
-      env:
-        ESLINT_VERSION: '${{ inputs.eslint_version }}'
-      run: |
-        npm install "eslint@${ESLINT_VERSION}"
-
     - name: 'Check formatting'
       shell: 'bash'
       working-directory: '${{ inputs.directory }}'
@@ -67,7 +54,8 @@ runs:
         shopt -s globstar
 
         if [[ "${IS_ESLINT}" == "true" ]]; then
-          npx eslint "**/*.ts"
+          npx eslint .
         else
+          npx gts init
           npx gts lint "**/*.ts"
         fi
