@@ -67,7 +67,7 @@ runs:
         shopt -s globstar
 
         if [[ "${IS_ESLINT}" == "true" ]]; then
-          npx eslint "**/*.js" 
+          npx eslint "**/*.js"
         else
-          npx gts lint **/*.js
+          npx gts lint "**/*.js"
         fi
