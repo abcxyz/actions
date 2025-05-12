@@ -37,6 +37,7 @@ jobs:
     outputs:
       lint-targets: '${{ steps.lint-targets.outputs.lint-targets }}'
       gomod-dirs: '${{ steps.lint-targets.outputs.gomod-dirs }}'
+      packagejson-dirs: '${{ steps.lint-targets.outputs.packagejson-dirs }}'
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
@@ -88,7 +89,7 @@ jobs:
           PACKAGEJSON_DIRS="$(find_dirs '(package.json$)')"
           if [[ -n "${PACKAGEJSON_DIRS}" ]]; then
             PACKAGEJSON_DIRS_JSON="$(to_json "${PACKAGEJSON_DIRS}")"
-            echo "::debug::Found package.son directories: ${PACKAGEJSON_DIRS_JSON}"
+            echo "::debug::Found package.json directories: ${PACKAGEJSON_DIRS_JSON}"
             echo "packagejson-dirs=${PACKAGEJSON_DIRS_JSON}" >> "${GITHUB_OUTPUT}"
           fi
           declare -a TARGETS=()
