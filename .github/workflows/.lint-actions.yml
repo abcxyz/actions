@@ -307,8 +307,6 @@ jobs:
           fetch-depth: 1 # shallow clone
 
       - name: '[TYPESCRIPT] Lint Typescript'
-        if: |
-          matrix.lint-target == 'typescript'
         uses: './.github/actions/lint-typescript' # ratchet:exclude
         with:
           directory: '${{ matrix.packagejson-dir }}'
