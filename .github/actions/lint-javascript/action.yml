@@ -69,5 +69,5 @@ runs:
         if [[ "${IS_ESLINT}" == "true" ]]; then
           npx eslint "**/*.js" 
         else
-          gts lint **/*.js
+          npx gts lint **/*.js
         fi
