@@ -27,8 +27,26 @@ inputs:
 runs:
   using: 'composite'
   steps:
-    - name: 'Is eslint'
-      id: 'is-eslint'
+    - uses: 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' # ratchet:actions/setup-node@v4
+      with:
+        node-version-file: '${{ inputs.directory }}/package.json'
+
+    - name: 'Install npm dependencies'
+      shell: 'bash'
+      working-directory: '${{ inputs.directory }}'
+      run: 'npm ci --install-links'
+
+    - name: 'Has npm lint'
+      id: 'has-npm-lint'
+      shell: 'bash'
+      working-directory: '${{ inputs.directory }}'
+      run: |
+        if npm run | grep -q lint; then
+          echo "found=true" >> "${GITHUB_OUTPUT}"
+        fi
+
+    - name: 'Has eslint'
+      id: 'has-eslint'
       shell: 'bash'
       working-directory: '${{ inputs.directory }}'
       run: |
@@ -36,26 +54,16 @@ runs:
           echo "found=true" >> "${GITHUB_OUTPUT}"
         fi
 
-    - name: 'Install GTS'
-      if: |
-        steps.is-eslint.outputs.found != 'true'
-      shell: 'bash'
-      env:
-        GTS_VERSION: '${{ inputs.gts_version }}'
-      run: |
-        npm install "gts@${GTS_VERSION}"
-
     - name: 'Check formatting'
       shell: 'bash'
       working-directory: '${{ inputs.directory }}'
       env:
-        IS_ESLINT: '${{ steps.is-eslint.outputs.found }}'
+        HAS_ESLINT: '${{ steps.has-eslint.outputs.found }}'
+        HAS_NPM_LINT: '${{ steps.has-npm-lint.outputs.found }}'
       run: |-
-        shopt -s globstar
-
-        if [[ "${IS_ESLINT}" == "true" ]]; then
+        # Default to the repo specific "npm run lint".
+        if [[ "${HAS_NPM_LINT}" == "true" ]]; then
+          npm run lint
+        elif [[ "${IS_ESLINT}" == "true" ]]; then
           npx eslint .
-        else
-          npx gts init
-          npx gts lint "**/*.ts"
         fi
