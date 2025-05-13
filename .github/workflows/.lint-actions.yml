@@ -189,7 +189,7 @@ jobs:
         if: |
           matrix.lint-target == 'javascript'
         run: |-
-          echo "TODO: Lint javascript"
+          echo "TODO: Lint standalone javascript"
 
       - name: '[SHELL] Lint Shell'
         if: |
@@ -285,7 +285,7 @@ jobs:
           directory: '${{ matrix.gomod-dir }}'
           golangci_lint_version: '${{ env.GO_LINT_GOLANGCI_LINT_VERSION }}'
 
-  lint-typescript:
+  lint-js-ts:
     runs-on: |-
       ${{ vars.LINT_RUNS_ON || 'ubuntu-latest' }}
     needs:
@@ -306,7 +306,7 @@ jobs:
         with:
           fetch-depth: 1 # shallow clone
 
-      - name: '[TYPESCRIPT] Lint Typescript'
-        uses: './.github/actions/lint-typescript' # ratchet:exclude
+      - name: '[JAVASCRIPT] Lint Javascript and Typescript'
+        uses: './.github/actions/lint-javascript' # ratchet:exclude
         with:
           directory: '${{ matrix.packagejson-dir }}'

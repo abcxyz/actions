@@ -12,13 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-name: 'lint-typescript'
-description: 'Lint typescript against the abcxyz style guide.'
+name: 'lint-javascript'
+description: 'Lint javascript and typescript.'
 inputs:
-  gts_version:
-    description: 'The version of gts to use. This must be the full version with no leading "v" prefix.'
-    type: 'string'
-    default: '6.0.2'
   directory:
     description: 'Directory in which Java files reside.'
     type: 'string'
@@ -60,10 +56,14 @@ runs:
       env:
         HAS_ESLINT: '${{ steps.has-eslint.outputs.found }}'
         HAS_NPM_LINT: '${{ steps.has-npm-lint.outputs.found }}'
+        TARGET_DIR: '${{ inputs.directory }}'
       run: |-
         # Default to the repo specific "npm run lint".
         if [[ "${HAS_NPM_LINT}" == "true" ]]; then
           npm run lint
         elif [[ "${IS_ESLINT}" == "true" ]]; then
           npx eslint .
+        else
+          echo "::notice::Linting skipped for ${TARGET_DIR}."
+          echo "::notice::Please consider adding a 'lint' command to your package.json or including an eslint.config.js."
         fi
