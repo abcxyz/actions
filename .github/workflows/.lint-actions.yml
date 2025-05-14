@@ -37,6 +37,7 @@ jobs:
     outputs:
       lint-targets: '${{ steps.lint-targets.outputs.lint-targets }}'
       gomod-dirs: '${{ steps.lint-targets.outputs.gomod-dirs }}'
+      packagejson-dirs: '${{ steps.lint-targets.outputs.packagejson-dirs }}'
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
@@ -83,15 +84,20 @@ jobs:
             echo "::debug::Found go.mod directories: ${GOMOD_DIRS_JSON}"
             echo "gomod-dirs=${GOMOD_DIRS_JSON}" >> "${GITHUB_OUTPUT}"
           fi
+          # Typescript linting handled separtely from the rest of linting in order to
+          # shard linting across each package.json file.
+          PACKAGEJSON_DIRS="$(find_dirs '(package.json$)')"
+          if [[ -n "${PACKAGEJSON_DIRS}" ]]; then
+            PACKAGEJSON_DIRS_JSON="$(to_json "${PACKAGEJSON_DIRS}")"
+            echo "::debug::Found package.json directories: ${PACKAGEJSON_DIRS_JSON}"
+            echo "packagejson-dirs=${PACKAGEJSON_DIRS_JSON}" >> "${GITHUB_OUTPUT}"
+          fi
           declare -a TARGETS=()
           if match_files '.*\.(java)$'; then
             TARGETS+=("java")
           fi
           if match_files '.*\.(js)$'; then
             TARGETS+=("javascript")
-          fi
-          if match_files '.*\.(ts)$'; then
-            TARGETS+=("typescript")
           fi
           if match_files '.*\.(sh)$'; then
             TARGETS+=("shell")
@@ -183,13 +189,7 @@ jobs:
         if: |
           matrix.lint-target == 'javascript'
         run: |-
-          echo "TODO: Lint javascript"
-
-      - name: '[TYPESCRIPT] Lint Typescript'
-        if: |
-          matrix.lint-target == 'typescript'
-        run: |-
-          echo "TODO: Lint typescript"
+          echo "TODO: Lint standalone javascript"
 
       - name: '[SHELL] Lint Shell'
         if: |
@@ -284,3 +284,29 @@ jobs:
           golangci_url: '${{ env.GO_LINT_GOLANGCI_URL }}'
           directory: '${{ matrix.gomod-dir }}'
           golangci_lint_version: '${{ env.GO_LINT_GOLANGCI_LINT_VERSION }}'
+
+  lint-js-ts:
+    runs-on: |-
+      ${{ vars.LINT_RUNS_ON || 'ubuntu-latest' }}
+    needs:
+      - 'init'
+    if: |
+      needs.init.outputs.packagejson-dirs != '' && needs.init.outputs.packagejson-dirs != '[]' && github.repository == 'abcxyz/actions'
+    permissions:
+      contents: 'read'
+    strategy:
+      fail-fast: false
+      max-parallel: 100
+      matrix:
+        packagejson-dir: '${{ fromJSON(needs.init.outputs.packagejson-dirs) }}'
+
+    steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+        with:
+          fetch-depth: 1 # shallow clone
+
+      - name: '[JAVASCRIPT] Lint Javascript and Typescript'
+        uses: './.github/actions/lint-javascript' # ratchet:exclude
+        with:
+          directory: '${{ matrix.packagejson-dir }}'

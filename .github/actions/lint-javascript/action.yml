@@ -1,0 +1,69 @@
+# Copyright 2025 The Authors (see AUTHORS file)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: 'lint-javascript'
+description: 'Lint javascript and typescript.'
+inputs:
+  directory:
+    description: 'Directory in which Java files reside.'
+    type: 'string'
+    default: '.'
+
+runs:
+  using: 'composite'
+  steps:
+    - uses: 'actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020' # ratchet:actions/setup-node@v4
+      with:
+        node-version-file: '${{ inputs.directory }}/package.json'
+
+    - name: 'Install npm dependencies'
+      shell: 'bash'
+      working-directory: '${{ inputs.directory }}'
+      run: 'npm ci --install-links'
+
+    - name: 'Has npm lint'
+      id: 'has-npm-lint'
+      shell: 'bash'
+      working-directory: '${{ inputs.directory }}'
+      run: |
+        if npm run | grep -q lint; then
+          echo "found=true" >> "${GITHUB_OUTPUT}"
+        fi
+
+    - name: 'Has eslint'
+      id: 'has-eslint'
+      shell: 'bash'
+      working-directory: '${{ inputs.directory }}'
+      run: |
+        if [[ -f eslint.config.js || -f eslint.config.mjs || -f eslint.config.cjs ]]; then
+          echo "found=true" >> "${GITHUB_OUTPUT}"
+        fi
+
+    - name: 'Check formatting'
+      shell: 'bash'
+      working-directory: '${{ inputs.directory }}'
+      env:
+        HAS_ESLINT: '${{ steps.has-eslint.outputs.found }}'
+        HAS_NPM_LINT: '${{ steps.has-npm-lint.outputs.found }}'
+        TARGET_DIR: '${{ inputs.directory }}'
+      run: |-
+        # Default to the repo specific "npm run lint".
+        if [[ "${HAS_NPM_LINT}" == "true" ]]; then
+          npm run lint
+        elif [[ "${IS_ESLINT}" == "true" ]]; then
+          npx eslint .
+        else
+          echo "::notice::Linting skipped for ${TARGET_DIR}."
+          echo "::notice::Please consider adding a 'lint' command to your package.json or including an eslint.config.js."
+        fi
