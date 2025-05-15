@@ -10,6 +10,10 @@ inputs:
     description: "Team slug. The team's organization must be in the repository's organization. Example: feature-team"
     required: true
     type: 'string'
+  user-id-allowlist:
+    description: 'A comma-seperated list of GitHub User IDs to be allowlisted. PRs from these User IDs will not be subject to multi-approvers requirements. This should be used exclusively for bots that cannot be included in the GitHub team.'
+    required: false
+    type: 'string'
 
 runs:
   using: 'node20'
