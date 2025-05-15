@@ -36,6 +36,7 @@ export interface MultiApproversParams {
   repoOwner: string;
   token: string;
   team: string;
+  allowlistedUserIdsSet?: Set<number>;
   octokitOptions?: OctokitOptions;
   // eslint-disable-next-line no-unused-vars
   logDebug: (_: string) => void;
@@ -54,6 +55,7 @@ export class MultiApproversAction {
   private readonly repoOwner: string;
   private readonly team: string;
   private readonly octokit: Octokit;
+  private readonly allowlistedUserIdsSet: Set<number>;
 
   constructor(params: MultiApproversParams) {
     this.eventName = params.eventName;
@@ -68,6 +70,8 @@ export class MultiApproversAction {
     this.logNotice = params.logNotice;
 
     this.octokit = getOctokit(params.token, params.octokitOptions);
+    this.allowlistedUserIdsSet =
+      params.allowlistedUserIdsSet || new Set<number>();
   }
 
   // Set in the constructor.
@@ -81,6 +85,15 @@ export class MultiApproversAction {
   // Set in the constructor.
   // eslint-disable-next-line no-unused-vars
   private logNotice: (_: string) => void;
+
+  // Checks if the given login is in the trusted external user allowlist.
+  private isAllowlisted(userId: number): boolean {
+    const isListed = this.allowlistedUserIdsSet.has(userId);
+    if (isListed) {
+      this.logDebug(`User ID '${userId}' is in the allowlist.`);
+    }
+    return isListed;
+  }
 
   // Tests whether the given login is an active member of the team.
   private async isInternal(login: string): Promise<boolean> {
@@ -246,6 +259,19 @@ export class MultiApproversAction {
       pull_number: this.pullNumber,
     });
     const prLogin = prResponse.data.user.login;
+    const prAuthorId = prResponse.data.user.id;
+
+    // Check if the user id is in the allowlist.
+    const isInAllowlist = await this.isAllowlisted(prAuthorId);
+    if (isInAllowlist) {
+      // Do nothing if the pull request owner is on the trusted allowlist.
+      this.logInfo(
+        `Pull request login ${
+          prLogin
+        }(ID: ${prAuthorId}) is in the trusted allowlist, therefore no special approval rules apply.`,
+      );
+      return;
+    }
 
     const isInternalPr = await this.isInternal(prLogin);
     if (isInternalPr) {

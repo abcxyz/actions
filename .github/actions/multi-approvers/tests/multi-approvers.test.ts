@@ -31,6 +31,7 @@ const BASE_PARAMS = {
   repoOwner: "acme-org",
   token: "fake-token",
   team: "roadrunners",
+  allowlistedUserIdsSet: new Set<number>(),
   octokitOptions: { request: fetch },
   // eslint-disable-next-line no-unused-vars
   logDebug: (_: string) => {},
@@ -103,6 +104,62 @@ test("#multi-approvers", { concurrency: true }, async (suite) => {
 
     await assertDoesNotReject(nockScope);
   });
+
+  // PR from allowlisted user should pass and skip team check
+  await suite.test(
+    "should ignore PRs from allowlisted users by ID",
+    async () => {
+      const { repoOwner, repoName, pullNumber } = BASE_PARAMS;
+      const prLogin = "dependabot[bot]";
+      const prAuthorId = 312312;
+
+      const nockScope = nock(GITHUB_API_BASE_URL)
+        .get(`/repos/${repoOwner}/${repoName}/pulls/${pullNumber}`)
+        .reply(200, {
+          user: {
+            login: prLogin,
+            id: prAuthorId,
+          },
+        });
+
+      // Override BASE_PARAMS to include the allowlisted user ID
+      await assertDoesNotReject(nockScope, {
+        allowlistedUserIdsSet: new Set([prAuthorId]),
+      });
+    },
+  );
+
+  // PR from external user NOT on allowlist should still be rejected
+  await suite.test(
+    "should reject PRs from external users (not on allowlist) with no internal approvals",
+    async () => {
+      const { repoOwner, repoName, pullNumber, team } = BASE_PARAMS;
+      const prLogin = "external-user";
+      const prAuthorId = 99999;
+
+      const nockScope = nock(GITHUB_API_BASE_URL)
+        .get(`/repos/${repoOwner}/${repoName}/pulls/${pullNumber}`)
+        .reply(200, {
+          user: {
+            login: prLogin,
+            id: prAuthorId,
+          },
+        })
+        .get(`/orgs/${repoOwner}/teams/${team}/memberships/${prLogin}`)
+        .reply(404)
+        .get(`/repos/${repoOwner}/${repoName}/pulls/${pullNumber}/reviews`)
+        .reply(200, []);
+
+      // Override BASE_PARAMS to ensure allowlist does NOT contain this user ID
+      await assertRejects(
+        nockScope,
+        "This pull request has 0 of 2 required internal approvals.",
+        {
+          allowlistedUserIdsSet: new Set([12345, 67890]),
+        },
+      );
+    },
+  );
 
   await suite.test(
     "should reject PRs from external users and no internal approvals",
