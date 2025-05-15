@@ -1,0 +1,81 @@
+name: 'terraform-clean-up'
+description: 'Cleans up Terraform resources'
+
+inputs:
+  token:
+    description: 'The GitHub PAT or app installation token to use for calling GitHub APIs. NOTE: This cannot be the default GitHub token as workflows will not run for pull requests using that token.'
+    required: true
+  dir:
+    description: 'Directory that holds the empty terraform definitions'
+    required: true
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Checkout'
+      uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+
+    - name: 'Authenticate to Google Cloud'
+      uses: 'google-github-actions/auth@6fc4af4b145ae7821d527454aa9bd537d1f2dc5f' # ratchet:google-github-actions/auth@v2
+      with:
+        workload_identity_provider: '${{ env.GUARDIAN_WIF_PROVIDER }}'
+        service_account: '${{ env.GUARDIAN_WIF_SERVICE_ACCOUNT }}'
+
+    - name: 'Setup guardian'
+      uses: 'abcxyz/actions/.github/actions/setup-binary@4354d52e96a232b28734c3a0cc39266ecc3d52e8' # ratchet:abcxyz/actions/.github/actions/setup-binary@main
+      with:
+        download_url: 'https://github.com/abcxyz/guardian/releases/download/v${{ env.GUARDIAN_VERSION }}/guardian_${{ env.GUARDIAN_VERSION }}_linux_amd64.tar.gz'
+        install_path: '${{ runner.temp }}/.guardian'
+        binary_subpath: 'guardian'
+        cache_key: '${{ runner.os }}_${{ runner.arch }}_guardian_${{ env.GUARDIAN_VERSION }}'
+        add_to_path: true
+
+    - name: 'Delete statefiles'
+      shell: 'bash'
+      env:
+        DIRECTORY: '${{ inputs.dir }}'
+      run: |-
+        guardian cleanup -dir="${DIRECTORY}"
+
+    - name: 'Delete files'
+      shell: 'bash'
+      run: |-
+        rm -rf ${GITHUB_WORKSPACE}/${{ inputs.dir }}
+
+    - uses: 'actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea' # ratchet:actions/github-script@v7
+      id: 'get-pr'
+      with:
+        result-encoding: 'json'
+        script: |
+          const result = await github.rest.repos.listPullRequestsAssociatedWithCommit({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            commit_sha: context.sha,
+          });
+          if (result.data.length === 0) {
+            console.log('No PRs found for this commit.');
+            return null;
+          }
+          return { num: result.data[0].number, author: result.data[0].user.login };
+
+    - name: 'Create Pull Request'
+      id: 'cleanup-pr'
+      uses: 'abcxyz/actions/.github/actions/create-pull-request@main' # ratchet:exclude
+      with:
+        token: '${{ inputs.token }}'
+        base_branch: '${{ github.event.repository.default_branch }}'
+        head_branch: 'automation/terraform-clean-up-${{github.ref_name}}'
+        title: 'Cleanup: `${{ inputs.dir }}`'
+        body: 'Followup: #${{ fromJSON(steps.get-pr.outputs.result).num }}'
+        compute_paths: true
+
+    - uses: 'actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea' # ratchet:actions/github-script@v7
+      with:
+        result-encoding: 'string'
+        script: |
+          await github.rest.pulls.requestReviewers({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            pull_number: ${{ steps.cleanup-pr.outputs.pr_number }},
+            reviewers: [ '${{ fromJSON(steps.get-pr.outputs.result).author }}' ],
+          })
