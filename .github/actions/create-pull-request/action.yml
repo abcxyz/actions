@@ -29,6 +29,10 @@ inputs:
   token:
     description: 'The GitHub PAT or app installation token to use for calling GitHub APIs. NOTE: This cannot be the default GitHub token as workflows will not run for pull requests using that token.'
     required: true
+  repository:
+    description: 'GitHub repository name with owner, e.g. "abcxyz/actions". If not included, the repo of the calling workflow will be inferred from context.'
+    required: false
+    default: ''
   head_branch:
     description: 'The pull request head branch name.'
     required: true
@@ -76,6 +80,7 @@ runs:
       id: 'base-branch-ref'
       uses: 'actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea' # ratchet:actions/github-script@v7
       env:
+        REPOSITORY: '${{ inputs.repository }}'
         HEAD_BRANCH: '${{ inputs.head_branch }}'
         BASE_BRANCH: '${{ inputs.base_branch }}'
         PR_TITLE: '${{ inputs.title }}'
@@ -86,17 +91,21 @@ runs:
         retries: '${{ inputs.max_retries }}'
         script: |-
           const pullRequestPartialRef = `heads/${process.env.BASE_BRANCH}`;
+          const [input_owner, input_repo] = `${process.env.REPOSITORY}`.split("/");
+          const [owner, repo] = input_owner && input_repo
+            ? [input_owner, input_repo]
+            : [context.repo.owner, context.repo.repo];
 
           try {
             core.info(`Get base branch reference:
-              owner: ${context.repo.owner}
-              repo:  ${context.repo.repo}
+              owner: ${owner}
+              repo:  ${repo}
               ref:   ${pullRequestPartialRef}
             `);
 
             const { data: existingRef } = await github.rest.git.getRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner: owner,
+              repo: repo,
               ref: pullRequestPartialRef,
             });
 
@@ -112,6 +121,7 @@ runs:
       id: 'head-branch-ref'
       uses: 'actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea' # ratchet:actions/github-script@v7
       env:
+        REPOSITORY: '${{ inputs.repository }}'
         HEAD_BRANCH: '${{ inputs.head_branch }}'
         BASE_BRANCH: '${{ inputs.base_branch }}'
         PR_TITLE: '${{ inputs.title }}'
@@ -123,17 +133,21 @@ runs:
         script: |-
           const pullRequestPartialRef = `heads/${process.env.HEAD_BRANCH}`;
           const pullRequestFullRef = `refs/${pullRequestPartialRef}`;
+          const [input_owner, input_repo] = `${process.env.REPOSITORY}`.split("/");
+          const [owner, repo] = input_owner && input_repo
+            ? [input_owner, input_repo]
+            : [context.repo.owner, context.repo.repo];
 
           try {
             core.info(`Get refer request reference:
-              owner: ${context.repo.owner}
-              repo:  ${context.repo.repo}
+              owner: ${owner}
+              repo:  ${repo}
               ref:   ${pullRequestPartialRef}
             `);
 
             const { data: existingRef } = await github.rest.git.getRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner: owner,
+              repo: repo,
               ref: pullRequestPartialRef,
             });
 
@@ -149,14 +163,14 @@ runs:
 
           try {
             core.info(`Checking for existing pull request reference:
-              owner: ${context.repo.owner}
-              repo:  ${context.repo.repo}
+              owner: ${owner}
+              repo:  ${repo}
               ref:   ${pullRequestPartialRef}
             `);
 
             const { data: existingRef } = await github.rest.git.getRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner: owner,
+              repo: repo,
               ref: pullRequestPartialRef,
             });
 
@@ -172,15 +186,15 @@ runs:
 
           try {
             core.info(`Creating new pull request reference:
-              owner: ${context.repo.owner}
-              repo:  ${context.repo.repo}
+              owner: ${owner}
+              repo:  ${repo}
               ref:   ${pullRequestFullRef}
               sha:   ${context.sha}
             `);
 
             const { data: newRef } = await github.rest.git.createRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner: owner,
+              repo: repo,
               ref: pullRequestFullRef,
               sha: context.sha,
             });
@@ -254,6 +268,7 @@ runs:
       if: |-
         ${{ fromJSON(steps.compute-changes.outputs.has_changes || 'false') }}
       env:
+        REPOSITORY: '${{ inputs.repository }}'
         HEAD_BRANCH: '${{ inputs.head_branch }}'
         BASE_BRANCH: '${{ inputs.base_branch }}'
         PR_TITLE: '${{ inputs.title }}'
@@ -269,6 +284,10 @@ runs:
 
             const parentSHA = "${{ steps.base-branch-ref.outputs.result }}";
             const pullRequestPartialRef = `heads/${process.env.HEAD_BRANCH}`;
+            const [input_owner, input_repo] = `${process.env.REPOSITORY}`.split("/");
+            const [owner, repo] = input_owner && input_repo
+              ? [input_owner, input_repo]
+              : [context.repo.owner, context.repo.repo];
 
             // documented here: https://docs.github.com/en/rest/git/trees?apiVersion=2022-11-28#create-a-tree
             const FILE_MODE = "100644";
@@ -309,15 +328,15 @@ runs:
             );
 
             core.info(`Creating new tree:
-              owner:     ${context.repo.owner}
-              repo:      ${context.repo.repo}
+              owner:     ${owner}
+              repo:      ${repo}
               base_tree: ${context.sha}
             `);
 
             // create new git tree from the pr branch
             const { data: tree } = await github.rest.git.createTree({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner: owner,
+              repo: repo,
               base_tree: context.sha,
               tree: prCommitTree,
             });
@@ -325,16 +344,16 @@ runs:
             core.debug("tree: ${tree}");
 
             core.info(`Creating new commit:
-              owner:   ${context.repo.owner}
-              repo:    ${context.repo.repo}
+              owner:   ${owner}
+              repo:    ${repo}
               parents: ${parentSHA}
               tree:    ${tree.sha}
             `);
 
             // create a commit from on the git tree
             const { data: commit } = await github.rest.git.createCommit({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner: owner,
+              repo: repo,
               message: process.env.PR_TITLE,
               parents: [parentSHA],
               tree: tree.sha,
@@ -343,16 +362,16 @@ runs:
             core.debug("commit: ${commit}");
 
             core.info(`Updating PR branch ref
-              owner: ${context.repo.owner}
-              repo:  ${context.repo.repo}
+              owner: ${owner}
+              repo:  ${repo}
               ref:   ${pullRequestPartialRef}
               sha:   ${commit.sha}
             `);
 
             // update the pr branch reference with the new git tree
             await github.rest.git.updateRef({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner: owner,
+              repo: repo,
               ref: pullRequestPartialRef,
               sha: commit.sha,
               force: true
@@ -369,6 +388,7 @@ runs:
       if: |-
         ${{ fromJSON(steps.compute-changes.outputs.has_changes || 'false') }}
       env:
+        REPOSITORY: '${{ inputs.repository }}'
         HEAD_BRANCH: '${{ inputs.head_branch }}'
         BASE_BRANCH: '${{ inputs.base_branch }}'
         PR_TITLE: '${{ inputs.title }}'
@@ -380,12 +400,16 @@ runs:
           try {
             const headRef = process.env.HEAD_BRANCH;
             const baseRef = process.env.BASE_BRANCH;
+            const [input_owner, input_repo] = `${process.env.REPOSITORY}`.split("/");
+            const [owner, repo] = input_owner && input_repo
+              ? [input_owner, input_repo]
+              : [context.repo.owner, context.repo.repo];
 
             const listResponse = await github.rest.pulls.list({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner: owner,
+              repo: repo,
               state: "open",
-              head: `${context.repo.owner}:${process.env.HEAD_BRANCH}`,
+              head: `${owner}:${process.env.HEAD_BRANCH}`,
               base: process.env.BASE_BRANCH,
             });
 
@@ -394,15 +418,15 @@ runs:
             let pullRequestNodeID;
             if (!listResponse.data.length) {
               core.info(`Creating pull request:
-                owner: ${context.repo.owner}
-                repo:  ${context.repo.repo}
+                owner: ${owner}
+                repo:  ${repo}
                 head:  ${headRef}
                 base:  ${baseRef}
               `);
 
               const createResponse = await github.rest.pulls.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
+                owner: owner,
+                repo: repo,
                 head: headRef,
                 base: baseRef,
                 title: process.env.PR_TITLE,
@@ -418,14 +442,14 @@ runs:
               core.setOutput("number", createResponse.data.number)
             } else {
               core.info(`Updating pull request:
-                owner:       ${context.repo.owner}
-                repo:        ${context.repo.repo}
+                owner:       ${owner}
+                repo:        ${repo}
                 pull_number: ${listResponse.data[0].number}
               `);
 
               const updateResponse = await github.rest.pulls.update({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
+                owner: owner,
+                repo: repo,
                 pull_number: listResponse.data[0].number,
                 title: process.env.PR_TITLE,
                 body: process.env.PR_BODY,
