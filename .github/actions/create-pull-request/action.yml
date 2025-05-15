@@ -68,6 +68,11 @@ inputs:
     required: false
     default: '3'
 
+outputs:
+  pr_number:
+    description: 'The value that this action will output.'
+    value: '${{ steps.create-update-pull-request.outputs.number }}'
+
 runs:
   using: 'composite'
   steps:
@@ -298,10 +303,9 @@ runs:
             await Promise.all(
               deletedPaths.map(async (file) => {
                 core.debug("processing deleted file: ${file}...")
-                const isExec = !!((await fs.stat(file).mode) & fs.constants.S_IXUSR);
                 prCommitTree.push({
                   path: file,
-                  mode: isExec ? EXEC_MODE : FILE_MODE,
+                  mode: FILE_MODE, // ignored by upstream API
                   type: "blob",
                   sha: null,
                 });
