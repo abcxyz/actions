@@ -13,6 +13,26 @@ actions:write privledges.
 to generate this token in a workflow. Here's an example workflow YAML using this
 action:
 
+> [!NOTE]
+> Workflows can be triggered by either `pull_request` or `pull_request_target`
+> events.
+>
+> The `pull_request` event is strongly recommended as it comes with less
+> security risks compared to `pull_request_target`.
+>
+> However, if your repository
+>
+> 1. Is public
+> 1. AND Will receives PRs from from forks
+> 1. AND Is using a stored secret
+>
+> then you should use `pull_request_target` to be able to access the stored
+> secret.
+>
+> Before using `pull_request_target`, please read about the
+> [potential security risks](https://securitylab.github.com/resources/github-actions-preventing-pwn-requests/).
+
+
 ```yaml
 name: 'multi-approvers'
 
@@ -87,7 +107,7 @@ Here's another example using a stored secret to get the token:
 name: 'multi-approvers'
 
 on:
-  pull_request:
+  pull_request[_target]:
     types:
       - 'opened'
       - 'edited'
