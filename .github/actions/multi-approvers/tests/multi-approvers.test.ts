@@ -31,7 +31,7 @@ const BASE_PARAMS = {
   repoOwner: "acme-org",
   token: "fake-token",
   team: "roadrunners",
-  allowlistedUserIdsSet: new Set<number>(),
+  userIdAllowlist: new Set<number>(),
   octokitOptions: { request: fetch },
   // eslint-disable-next-line no-unused-vars
   logDebug: (_: string) => {},
@@ -124,7 +124,7 @@ test("#multi-approvers", { concurrency: true }, async (suite) => {
 
       // Override BASE_PARAMS to include the allowlisted user ID
       await assertDoesNotReject(nockScope, {
-        allowlistedUserIdsSet: new Set([prAuthorId]),
+        userIdAllowlist: new Set([prAuthorId]),
       });
     },
   );
@@ -155,7 +155,7 @@ test("#multi-approvers", { concurrency: true }, async (suite) => {
         nockScope,
         "This pull request has 0 of 2 required internal approvals.",
         {
-          allowlistedUserIdsSet: new Set([12345, 67890]),
+          userIdAllowlist: new Set([12345, 67890]),
         },
       );
     },
