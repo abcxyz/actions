@@ -70,8 +70,7 @@ export class MultiApproversAction {
     this.logNotice = params.logNotice;
 
     this.octokit = getOctokit(params.token, params.octokitOptions);
-    this.userIdAllowlist =
-      params.userIdAllowlist || new Set<number>();
+    this.userIdAllowlist = params.userIdAllowlist || new Set<number>();
   }
 
   // Set in the constructor.
