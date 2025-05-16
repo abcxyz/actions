@@ -108,7 +108,6 @@ test("#main", { concurrency: true }, async (suite) => {
       assert.equal(
         failMsg,
         "Multi-approvers action failed: invalid allowlisted user ID: [abc]. Full input (user-id-allowlist): [123,abc,456]",
-        `Expected error message to specify 'abc', but got: ${failMsg}`,
       );
     },
   );
@@ -133,7 +132,6 @@ test("#main", { concurrency: true }, async (suite) => {
       assert.equal(
         failMsg,
         "Multi-approvers action failed: invalid allowlisted user ID: [a]. Full input (user-id-allowlist): [123, 9, 456, a, b]",
-        `Expected error message to specify 'a', but got: ${failMsg}`,
       );
     },
   );
