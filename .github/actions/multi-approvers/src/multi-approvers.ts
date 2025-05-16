@@ -36,7 +36,7 @@ export interface MultiApproversParams {
   repoOwner: string;
   token: string;
   team: string;
-  allowlistedUserIdsSet?: Set<number>;
+  userIdAllowlist?: Set<number>;
   octokitOptions?: OctokitOptions;
   // eslint-disable-next-line no-unused-vars
   logDebug: (_: string) => void;
@@ -55,7 +55,7 @@ export class MultiApproversAction {
   private readonly repoOwner: string;
   private readonly team: string;
   private readonly octokit: Octokit;
-  private readonly allowlistedUserIdsSet: Set<number>;
+  private readonly userIdAllowlist: Set<number>;
 
   constructor(params: MultiApproversParams) {
     this.eventName = params.eventName;
@@ -70,8 +70,8 @@ export class MultiApproversAction {
     this.logNotice = params.logNotice;
 
     this.octokit = getOctokit(params.token, params.octokitOptions);
-    this.allowlistedUserIdsSet =
-      params.allowlistedUserIdsSet || new Set<number>();
+    this.userIdAllowlist =
+      params.userIdAllowlist || new Set<number>();
   }
 
   // Set in the constructor.
@@ -88,7 +88,7 @@ export class MultiApproversAction {
 
   // Checks if the given login is in the trusted external user allowlist.
   private isAllowlisted(userId: number): boolean {
-    const isListed = this.allowlistedUserIdsSet.has(userId);
+    const isListed = this.userIdAllowlist.has(userId);
     if (isListed) {
       this.logDebug(`User ID '${userId}' is in the allowlist.`);
     }
