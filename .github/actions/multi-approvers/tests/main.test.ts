@@ -30,53 +30,38 @@ function newFakeCore(inputs: { [key: string]: string }): Core {
   } as unknown as Core;
 }
 
-function createFakePullRequestContext(): Context {
-  return {
-    eventName: "pull_request",
-    runId: 1,
-    payload: {
-      pull_request: {
-        number: 1,
-        head: {
-          ref: "fake-branch",
-        },
-        user: {
-          login: "test-user",
-          id: 12345,
-        },
+const BASE_PULL_REQUEST = {
+  eventName: "pull_request",
+  runId: 1,
+  payload: {
+    pull_request: {
+      number: 1,
+      head: {
+        ref: "fake-branch",
       },
-      repository: {
-        name: "fake-repository",
-        owner: {
-          login: "test-org",
-        },
+      user: {
+        login: "test-user",
+        id: 12345,
       },
     },
-  } as unknown as Context;
+    repository: {
+      name: "fake-repository",
+      owner: {
+        login: "test-org",
+      },
+    },
+  },
+} as unknown as Context;
+
+function createFakeContext(overrides: Partial<Context> = {}): Context {
+  return Object.assign({}, BASE_PULL_REQUEST, overrides) as Context;
 }
 
 test("#main", { concurrency: true }, async (suite) => {
   await suite.test("should fail on unsupported event", async (t) => {
     const core = newFakeCore({ token: "fake-token", team: "fake-team" });
     const setFailed = t.mock.method(core, "setFailed", () => {});
-    const context = {
-      eventName: "push",
-      runId: 1,
-      payload: {
-        pull_request: {
-          number: 1,
-          head: {
-            ref: "fake-branch",
-          },
-        },
-        repository: {
-          name: "fake-repository",
-          owner: {
-            login: "test-org",
-          },
-        },
-      },
-    } as unknown as Context;
+    const context = createFakeContext({ eventName: "push" });
 
     await main(core, context);
 
@@ -98,7 +83,7 @@ test("#main", { concurrency: true }, async (suite) => {
         "user-id-allowlist": invalidAllowlistInput,
       });
       const setFailed = t.mock.method(core, "setFailed", () => {});
-      const context = createFakePullRequestContext();
+      const context = createFakeContext();
 
       await main(core, context);
 
@@ -122,7 +107,7 @@ test("#main", { concurrency: true }, async (suite) => {
         "user-id-allowlist": allowlistWithSpacesInput,
       });
       const setFailed = t.mock.method(core, "setFailed", () => {});
-      const context = createFakePullRequestContext();
+      const context = createFakeContext();
 
       await main(core, context);
 
