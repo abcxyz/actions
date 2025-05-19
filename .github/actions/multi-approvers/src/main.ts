@@ -34,12 +34,32 @@ function getEventName(rawEventName: string): EventName {
   return rawEventName as EventName;
 }
 
+function parseUserIds(raw: string): Set<number> {
+  const ids = raw.split(",").map((v) => {
+    const trimmedV = v.trim();
+    const n = parseInt(trimmedV, 10);
+    if (isNaN(n)) {
+      throw new Error(
+        `Invalid allowlisted user ID: [${trimmedV}]. Full input (user-id-allowlist): [${raw}]`,
+      );
+    }
+    return n;
+  });
+  return new Set(ids);
+}
+
 export async function main(core: Core = ghCore, context: Context = ghContext) {
   try {
     const payload = context.payload;
     const token = core.getInput("token", { required: true });
     const team = core.getInput("team", { required: true });
+    const rawAllowlistedUserIds = core.getInput("user-id-allowlist");
     const eventName = getEventName(context.eventName);
+    const userIdAllowlist = parseUserIds(rawAllowlistedUserIds);
+
+    core.debug(
+      `Allowlisted user IDs loaded from input: ${Array.from(userIdAllowlist).join(", ")} (Count: ${userIdAllowlist.size})`,
+    );
 
     const multiApproversAction = new MultiApproversAction({
       eventName: eventName,
@@ -50,6 +70,7 @@ export async function main(core: Core = ghCore, context: Context = ghContext) {
       repoOwner: payload.repository!.owner.login,
       token: token,
       team: team,
+      userIdAllowlist: userIdAllowlist,
       logDebug: core.debug,
       logInfo: core.info,
       logNotice: core.notice,
