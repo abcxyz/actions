@@ -265,7 +265,7 @@ jobs:
 
       - name: '[GOLANG] Lint Go modules'
         if: |
-          always()
+          always() && !cancelled()
         uses: './.github/actions/lint-go-modules' # ratchet:exclude
         with:
           go_version: '${{ env.GO_LINT_GO_VERSION }}'
@@ -276,7 +276,7 @@ jobs:
 
       - name: '[GOLANG] Lint Go'
         if: |
-          always()
+          always() && !cancelled()
         uses: './.github/actions/lint-go' # ratchet:exclude
         with:
           go_version: '${{ env.GO_LINT_GO_VERSION }}'
