@@ -19,10 +19,17 @@ import { components } from "@octokit/openapi-types";
 
 type PullRequestReview = components["schemas"]["pull-request-review"];
 type Octokit = ReturnType<typeof getOctokit>;
-export type EventName = "pull_request" | "pull_request_review";
+export type EventName =
+  | "pull_request"
+  | "pull_request_review"
+  | "pull_request_target";
 
 export function isEventName(v: string): v is EventName {
-  return ["pull_request", "pull_request_review"].includes(v);
+  return [
+    "pull_request",
+    "pull_request_review",
+    "pull_request_target",
+  ].includes(v);
 }
 
 const MIN_APPROVED_COUNT = 2;
