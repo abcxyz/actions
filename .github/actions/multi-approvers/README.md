@@ -4,7 +4,7 @@ Use this action to require two internal approvers for pull requests originating
 from an external user. This prevents internal users from creating "sock puppet"
 accounts and approving their own pull requests with their internal accounts.
 
-Internal users are users that are in the given GitHub team. External users are
+Internal users are users that are in the given GitHub team. Additionally, trusted users specified in the `user-id-allowlist` input, such as bots that cannot be added to a GitHub team, are also considered exempt from the multi-approver requirements. External users are
 all other users.
 
 This action requires a token with at least members:read, pull_requests:read, and
@@ -99,6 +99,7 @@ jobs:
         with:
           team: 'github-team-slug'
           token: '${{ steps.minty.outputs.token }}'
+          user-id-allowlist: '12345,67890'
 ```
 
 Here's another example using a stored secret to get the token:
@@ -140,6 +141,7 @@ jobs:
         with:
           team: 'github-team-slug'
           token: '${{ secrets.MULTI_APPROVERS_TOKEN }}'
+          user-id-allowlist: '12345,67890'
 ```
 
 ## Development
