@@ -7,6 +7,8 @@ accounts and approving their own pull requests with their internal accounts.
 Internal users are users that are in the given GitHub team. External users are
 all other users.
 
+Additionally, the `user-id-allowlist` input can be used to exempt users from multi-approver requirements. This should be used for users who cannot be included in the GitHub team e.g. bots. Note that the `user-id-allowlist` input takes numeric user IDs, not the string logins.
+
 This action requires a token with at least members:read, pull_requests:read, and
 actions:write privledges.
 [github-token-minter](https://github.com/abcxyz/github-token-minter) can be used
@@ -99,6 +101,7 @@ jobs:
         with:
           team: 'github-team-slug'
           token: '${{ steps.minty.outputs.token }}'
+          user-id-allowlist: '12345,67890'
 ```
 
 Here's another example using a stored secret to get the token:
@@ -140,6 +143,7 @@ jobs:
         with:
           team: 'github-team-slug'
           token: '${{ secrets.MULTI_APPROVERS_TOKEN }}'
+          user-id-allowlist: '12345,67890'
 ```
 
 ## Development
