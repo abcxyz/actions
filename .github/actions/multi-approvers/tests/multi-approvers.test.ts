@@ -247,6 +247,66 @@ test("#multi-approvers", { concurrency: true }, async (suite) => {
     },
   );
 
+  await suite.test(
+    "should succeed for PRs from external users and 2 internal approvals and using pull_request_target",
+    async () => {
+      const { repoOwner, repoName, pullNumber, team } = BASE_PARAMS;
+      const prLogin = "wile-e-coyote";
+      const approver1 = "approver-1";
+      const approver2 = "approver-2";
+
+      const nockScope = nock(GITHUB_API_BASE_URL)
+        .get(`/repos/${repoOwner}/${repoName}/pulls/${pullNumber}`)
+        .reply(200, {
+          owner: repoOwner,
+          pull_number: pullNumber,
+          repoName: repoName,
+          user: {
+            login: prLogin,
+          },
+        })
+        .get(`/orgs/${repoOwner}/teams/${team}/memberships/${prLogin}`)
+        .reply(404)
+        .get(`/repos/${repoOwner}/${repoName}/pulls/${pullNumber}/reviews`)
+        .reply(200, [
+          {
+            submitted_at: 1714636800,
+            user: {
+              login: approver1,
+            },
+            state: "APPROVED",
+          },
+          {
+            submitted_at: 1714636801,
+            user: {
+              login: approver2,
+            },
+            state: "APPROVED",
+          },
+        ])
+        .get(`/orgs/${repoOwner}/teams/${team}/memberships/${approver1}`)
+        .reply(200, {
+          org: repoOwner,
+          team_slug: team,
+          username: approver1,
+          role: "member",
+          state: "active",
+        })
+        .get(`/orgs/${repoOwner}/teams/${team}/memberships/${approver2}`)
+        .reply(200, {
+          org: repoOwner,
+          team_slug: team,
+          username: approver2,
+          role: "member",
+          state: "active",
+        });
+
+      await assertDoesNotReject(nockScope, {
+        eventName: "pull_request_target",
+      });
+    },
+  );
+
   await suite.test("should ignore PR review comments", async () => {
     const { repoOwner, repoName, pullNumber, team } = BASE_PARAMS;
     const prLogin = "wile-e-coyote";
