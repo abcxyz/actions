@@ -301,7 +301,9 @@ test("#multi-approvers", { concurrency: true }, async (suite) => {
           state: "active",
         });
 
-      await assertDoesNotReject(nockScope, {eventName: "pull_request_target"});
+      await assertDoesNotReject(nockScope, {
+        eventName: "pull_request_target",
+      });
     },
   );
 
