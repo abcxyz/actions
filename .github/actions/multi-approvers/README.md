@@ -4,8 +4,10 @@ Use this action to require two internal approvers for pull requests originating
 from an external user. This prevents internal users from creating "sock puppet"
 accounts and approving their own pull requests with their internal accounts.
 
-Internal users are users that are in the given GitHub team. Additionally, trusted users specified in the `user-id-allowlist` input, such as bots that cannot be added to a GitHub team, are also considered exempt from the multi-approver requirements. External users are
+Internal users are users that are in the given GitHub team. External users are
 all other users.
+
+Additionally, the `user-id-allowlist` input can be used to exempt users from multi-approver requirements. This should be used for users who cannot be included in the GitHub team e.g. bots. Note that the `user-id-allowlist` input takes numeric user IDs, not the string logins.
 
 This action requires a token with at least members:read, pull_requests:read, and
 actions:write privledges.
