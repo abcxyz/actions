@@ -1,0 +1,10 @@
+#!/bin/bash
+#MISE description="Lint yaml files"
+#MISE quiet=true
+tmp="$(mktemp)"
+curl "https://raw.githubusercontent.com/abcxyz/actions/main/.yamllint.yml" \
+    --silent \
+    --fail \
+    --location \
+    --output "${tmp}"
+yamllint --format github -c "${tmp}" "."

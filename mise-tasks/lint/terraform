@@ -1,0 +1,4 @@
+#!/bin/bash
+#MISE description="Lint terraform files"
+#MISE quiet=true
+terraform-linter lint .

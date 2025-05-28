@@ -1,0 +1,11 @@
+#!/bin/bash
+#MISE description="Lint shell files"
+#MISE quiet=true
+find "." \( -type f -name '*.sh' -or -name '*.bash' -or -name '*.zsh' \) -exec \
+    shellcheck \
+        --check-sourced \
+        --enable=all \
+        --severity=style \
+        --format=tty \
+        --color=always \
+        {} +
