@@ -8,4 +8,4 @@ mkdir -p "${ABC_MISE_CACHE}"
 if [[ ! -f "${GOLANG_CONFIG}" ]]; then
     wget "${DEFAULT_GOLANG_CONFIG}" -P "${ABC_MISE_CACHE}"
 fi
-golangci-lint run -c "${GOLANG_CONFIG}" "."
+golangci-lint run -c "${GOLANG_CONFIG}" ./...
