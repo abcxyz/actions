@@ -1,6 +1,7 @@
 #!/bin/bash
 #MISE description="Lint golang files"
 #MISE quiet=true
+#MISE tools={ golangci-lint = "1.64" }
 DEFAULT_GOLANG_CONFIG="https://raw.githubusercontent.com/abcxyz/actions/main/default.golangci.yml"
 ABC_MISE_CACHE="${HOME}/.cache/abc/mise"
 GOLANG_CONFIG="${ABC_MISE_CACHE}/default.golangci.yml"

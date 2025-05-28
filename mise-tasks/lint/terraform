@@ -1,4 +1,5 @@
 #!/bin/bash
 #MISE description="Lint terraform files"
 #MISE quiet=true
+#MISE tools={ "ubi:abcxyz/terraform-linter" = "latest" }
 terraform-linter lint .

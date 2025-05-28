@@ -1,6 +1,7 @@
 #!/bin/bash
 #MISE description="Lint shell files"
 #MISE quiet=true
+#MISE tools={ shellcheck = "0.10.0" }
 find "." \( -type f -name '*.sh' -or -name '*.bash' -or -name '*.zsh' \) -exec \
     shellcheck \
         --check-sourced \
