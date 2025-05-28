@@ -1,0 +1,11 @@
+#!/bin/bash
+#MISE description="Lint golang files"
+#MISE quiet=true
+DEFAULT_GOLANG_CONFIG="https://raw.githubusercontent.com/abcxyz/actions/main/.golangci.yml"
+ABC_MISE_CACHE="${HOME}/.cache/abc/mise"
+GOLANG_CONFIG="${ABC_MISE_CACHE}/.golangci.yml"
+mkdir -p "${ABC_MISE_CACHE}"
+if [[ ! -f "${GOLANG_CONFIG}" ]]; then
+    wget "${DEFAULT_GOLANG_CONFIG}" -P "${ABC_MISE_CACHE}"
+fi
+golangci-lint run -c "${GOLANG_CONFIG}" "."

@@ -1,0 +1,4 @@
+#!/bin/bash
+#MISE description="Lint java files"
+#MISE quiet=true
+google-java-format -i **/*.java
