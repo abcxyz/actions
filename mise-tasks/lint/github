@@ -1,8 +1,11 @@
 #!/bin/bash
 #MISE description="Lint github workflows and actions"
 #MISE quiet=true
+GITHUB_FORMAT='{{range $err := .}}::error file={{$err.Filepath}},line={{$err.Line}},col={{$err.Column}}::{{$err.Filepath}}@{{$err.Line}} {{$err.Message}}%0A```%0A{{replace $err.Snippet "\\n" "%0A"}}%0A```\n{{end}}'
+if [[ -n "${GITHUB_WORKSPACE}" ]]; then FORMAT="${GITHUB_FORMAT}"; else FORMAT=""; fi
+
 actionlint \
     -color \
-    -format '{{range $err := .}}::error file={{$err.Filepath}},line={{$err.Line}},col={{$err.Column}}::{{$err.Filepath}}@{{$err.Line}} {{$err.Message}}%0A```%0A{{replace $err.Snippet "\\n" "%0A"}}%0A```\n{{end}}' \
+    -format "${FORMAT}" \
     -ignore 'SC2016:' \
     -ignore 'label ".+" is unknown'
