@@ -2,4 +2,5 @@
 #MISE description="Lint java files"
 #MISE quiet=true
 #MISE tools={ "ubi:google/google-java-format" = "latest" }
-google-java-format -i **/*.java
+shopt -s globstar
+google-java-format -i ./**/*.java
