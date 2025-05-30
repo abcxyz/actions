@@ -91,10 +91,20 @@ runs:
         cat ./problem-matcher.json
         echo "::add-matcher::$(pwd)/problem-matcher.json"
 
-    - name: 'Hadolint'
+    - name: 'Lint (default configuration)'
+      if: |-
+        ${{ hashFiles('.hadolint.yaml', '.hadolint.yml') == '' }}
       shell: 'bash'
       working-directory: '${{ inputs.target }}'
       env:
         OUTPUT_FILE: '${{ steps.load-default-config.outputs.output-file }}'
       run: |
         git ls-files | grep -E '(dockerfile|Dockerfile)' | xargs hadolint -c "${OUTPUT_FILE}" --format=tty --no-color
+
+    - name: 'Lint (custom configuration)'
+      if: |-
+        ${{ hashFiles('.hadolint.yaml', '.hadolint.yml') != '' }}
+      shell: 'bash'
+      working-directory: '${{ inputs.target }}'
+      run: |-
+        git ls-files | grep -E '(dockerfile|Dockerfile)' | xargs hadolint --format=tty --no-color
