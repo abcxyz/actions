@@ -111,7 +111,7 @@ jobs:
           if match_files '.github/(actions|workflows)/.*\.(yaml|yml)$'; then
             TARGETS+=("github" "ratchet")
           fi
-          if match_files '.*\.(dockerfile|Dockerfile)$'; then
+          if match_files '.*(\.dockerfile|Dockerfile)$'; then
             TARGETS+=("docker")
           fi
           LINT_TARGETS="$(jq --compact-output --null-input '$ARGS.positional' --args -- "${TARGETS[@]}")"
