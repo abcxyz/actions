@@ -170,6 +170,15 @@ jobs:
       # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#naming-conventions-for-configuration-variables
       ACTIONS_LINT_ACTIONLINT_VERSION: |-
         ${{ vars.ACTIONS_LINT_ACTIONLINT_VERSION || '1.7.7' }}
+      ##############
+      ## DOCKER ####
+      ##############
+      DOCKER_LINT_DIRECTORY: |-
+        ${{ vars.DOCKER_LINT_DIRECTORY || '.' }}
+      DOCKER_LINT_HADOLINT_CONFIG_URL: |-
+        ${{ vars.DOCKER_LINT_HADOLINT_CONFIG_URL || 'https://raw.githubusercontent.com/abcxyz/actions/main/.hadolint.yml' }}
+      DOCKER_LINT_HADOLINT_VERSION: |-
+        ${{ vars.DOCKER_LINT_HADOLINT_VERSION || '2.12.0' }}
 
     steps:
       - name: 'Checkout'
@@ -235,6 +244,15 @@ jobs:
         uses: 'abcxyz/actions/.github/actions/lint-github-actions@main' # ratchet:exclude
         with:
           actionlint_version: '${{ env.ACTIONS_LINT_ACTIONLINT_VERSION }}'
+
+      - name: '[GITHUB] lint docker'
+        if: |
+          matrix.lint-target == 'docker'
+        uses: 'abcxyz/actions/.github/actions/lint-docker@main' # ratchet:exclude
+        with:
+          target: '${{ env.DOCKER_LINT_DIRECTORY }}'
+          hadolint_config_url: '${{ env.DOCKER_LINT_HADOLINT_CONFIG_URL }}'
+          hadolint_version: '${{ env.DOCKER_LINT_HADOLINT_VERSION }}'
 
   lint-go:
     runs-on: |-

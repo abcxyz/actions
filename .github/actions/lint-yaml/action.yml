@@ -75,7 +75,7 @@ runs:
         OUTPUT_FILE: '${{ steps.load-default-config.outputs.output-file }}'
         TARGET: '${{ inputs.target }}'
       run: |-
-        yamllint --format github -c "${OUTPUT_FILE}" "${TARGET}"
+        git ls-files | grep -E '\.(yaml|yml)' | xargs yamllint --format github -c "${OUTPUT_FILE}"
 
     - name: 'Lint (custom configuration)'
       if: |-
@@ -84,4 +84,4 @@ runs:
       env:
         TARGET: '${{ inputs.target }}'
       run: |-
-        yamllint --format github "${TARGET}"
+        git ls-files | grep -E '\.(yaml|yml)' | xargs yamllint --format github

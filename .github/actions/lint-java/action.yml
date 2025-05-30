@@ -74,9 +74,8 @@ runs:
       env:
         GOOGLE_JAVA_FORMAT_VERSION: '${{ inputs.google_java_format_version }}'
       run: |-
-        shopt -s globstar
-
-        "${{ runner.tool_cache }}/google-java-format-${GOOGLE_JAVA_FORMAT_VERSION}" -i **/*.java
+        git ls-files | grep -E '\.(java)' | xargs \
+          "${{ runner.tool_cache }}/google-java-format-${GOOGLE_JAVA_FORMAT_VERSION}" -i
 
         if [ -n "$(git status -s -uall)" ]; then
           echo "::error title=Java formatting::Detected unformatted Java"
