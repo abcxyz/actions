@@ -97,4 +97,4 @@ runs:
       env:
         OUTPUT_FILE: '${{ steps.load-default-config.outputs.output-file }}'
       run: |
-        git ls-files | grep -E '(dockerfile|Dockerfile)' | xargs hadolint --format=tty --no-color
+        git ls-files | grep -E '(dockerfile|Dockerfile)' | xargs hadolint -c "${OUTPUT_FILE}" --format=tty --no-color
