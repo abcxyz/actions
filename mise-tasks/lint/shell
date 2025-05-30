@@ -2,11 +2,13 @@
 #MISE description="Lint shell files"
 #MISE quiet=true
 #MISE tools={ shellcheck = "0.10.0" }
-find "." \( -type f -name '*.sh' -or -name '*.bash' -or -name '*.zsh' \) -exec \
-    shellcheck \
+
+# Find all bash scripts even if they don't have an explicit extension.
+git ls-files | grep -E '^([^.]+|.*\.(sh|zsh|bash))$' | xargs file --mime-type \
+    | grep "text/x-shellscript" | awk '{ print substr($1, 1, length($1)-1) }' \
+    | xargs shellcheck \
         --check-sourced \
         --enable=all \
         --severity=style \
         --format=tty \
-        --color=always \
-        {} +
+        --color=always

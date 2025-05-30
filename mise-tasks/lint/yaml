@@ -10,4 +10,4 @@ mkdir -p "${ABC_MISE_CACHE}"
 if [[ ! -f "${YAML_CONFIG}" ]]; then
     wget "${DEFAULT_YAML_CONFIG}" -P "${ABC_MISE_CACHE}"
 fi
-yamllint --format "${FORMAT}" -c "${YAML_CONFIG}" "."
+git ls-files | grep -E '\.(yaml|yml)' | xargs yamllint --format "${FORMAT}" -c "${YAML_CONFIG}"
