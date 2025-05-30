@@ -12,6 +12,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+hi=$HI
 
 if [ -z "${GITHUB_OUTPUT+x}" ]; then
   echo "required environment variable \$GITHUB_OUTPUT is not set"
@@ -28,5 +29,5 @@ cd /scancode-toolkit || exit 127
   --copyright \
   --license-score "70"
 
-echo "json=scancode.json" >> "${GITHUB_OUTPUT}"
+echo "json=scancode.json" >> ${GITHUB_OUTPUT}
 echo "csv=scancode.csv" >> "${GITHUB_OUTPUT}"

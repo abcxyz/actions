@@ -36,6 +36,32 @@ runs:
         cache_key: '${{ runner.os }}_${{ runner.arch }}_shellcheck_${{ inputs.shellcheck_version }}'
         add_to_path: true
 
+    - name: 'Add problem matcher'
+      shell: 'bash'
+      working-directory: '${{ inputs.target }}'
+      run: |
+        cat > ./problem-matcher.json <<EOF
+        {
+          "problemMatcher": [
+            {
+              "owner": "abcxyz/actions",
+              "pattern": [
+                {
+                  "regexp": "^(.+):(\\\\d+):(\\\\d+):\\\\s(error|warning|note):\\\\s(.+)$\\\\s\\\\[(.+)\\\\]",
+                  "file": 1,
+                  "line": 2,
+                  "code": 6,
+                  "severity": 4,
+                  "message": 5
+                }
+              ]
+            }
+          ]
+        }
+        EOF
+        cat ./problem-matcher.json
+        echo "::add-matcher::$(pwd)/problem-matcher.json"
+
     - name: 'Lint Shell'
       env:
         TARGET: '${{ inputs.target }}'
@@ -48,5 +74,5 @@ runs:
             --check-sourced \
             --enable=all \
             --severity=style \
-            --format=tty \
+            --format=gcc \
             --color=always
