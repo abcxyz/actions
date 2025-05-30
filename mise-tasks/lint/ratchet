@@ -1,0 +1,7 @@
+#!/bin/bash
+#MISE description="Lint java files"
+#MISE quiet=true
+#MISE tools={ "ubi:sethvargo/ratchet" = "latest" }
+shopt -s dotglob
+shopt -s nullglob
+ratchet lint ./.github/actions/**/*.yml ./.github/workflows/*.yml

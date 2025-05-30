@@ -3,4 +3,5 @@
 #MISE quiet=true
 #MISE tools={ "ubi:google/google-java-format" = "latest" }
 shopt -s globstar
+shopt -s nullglob
 google-java-format -i ./**/*.java
