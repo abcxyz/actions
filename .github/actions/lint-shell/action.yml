@@ -75,4 +75,4 @@ runs:
             --enable=all \
             --severity=style \
             --format=gcc \
-            --color=always | sed 's/note:/info:/g'
+            --color=never | sed 's/note:/info:/g'
