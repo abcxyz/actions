@@ -47,7 +47,7 @@ runs:
               "owner": "abcxyz/actions",
               "pattern": [
                 {
-                  "regexp": "^(.+):(\\\\d+):(\\\\d+):\\\\s(error|warning|note):\\\\s(.+)$\\\\s\\\\[(.+)\\\\]",
+                  "regexp": "^(.+):(\\\\d+):(\\\\d+):\\\\s(error|warning|note):\\\\s(.+)\\\\s\\\\[(.+)\\\\]$",
                   "file": 1,
                   "line": 2,
                   "code": 6,
