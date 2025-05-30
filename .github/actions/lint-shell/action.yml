@@ -47,7 +47,7 @@ runs:
               "owner": "abcxyz/actions",
               "pattern": [
                 {
-                  "regexp": "^(.+):(\\\\d+):(\\\\d+):\\\\s(error|warning|note):\\\\s(.+)\\\\s\\\\[(.+)\\\\]$",
+                  "regexp": "^(.+):(\\\\d+):(\\\\d+):\\\\s(error|warning|info):\\\\s(.+)\\\\s\\\\[(.+)\\\\]$",
                   "file": 1,
                   "line": 2,
                   "code": 6,
@@ -75,4 +75,4 @@ runs:
             --enable=all \
             --severity=style \
             --format=gcc \
-            --color=always
+            --color=always | sed 's/note:/info:/g'
