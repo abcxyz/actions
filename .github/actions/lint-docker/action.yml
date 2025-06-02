@@ -69,7 +69,7 @@ runs:
       shell: 'bash'
       working-directory: '${{ inputs.target }}'
       run: |
-        cat > ./problem-matcher.json <<EOF
+        cat > ./problem-matcher-lint-docker.json <<EOF
         {
           "problemMatcher": [
             {
@@ -88,8 +88,8 @@ runs:
           ]
         }
         EOF
-        cat ./problem-matcher.json
-        echo "::add-matcher::$(pwd)/problem-matcher.json"
+        cat ./problem-matcher-lint-docker.json
+        echo "::add-matcher::$(pwd)/problem-matcher-lint-docker.json"
 
     - name: 'Lint (default configuration)'
       if: |-

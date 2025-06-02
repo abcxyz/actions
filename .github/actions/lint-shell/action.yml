@@ -40,7 +40,7 @@ runs:
       shell: 'bash'
       working-directory: '${{ inputs.target }}'
       run: |
-        cat > ./problem-matcher.json <<EOF
+        cat > ./problem-matcher-lint-shell.json <<EOF
         {
           "problemMatcher": [
             {
@@ -59,17 +59,17 @@ runs:
           ]
         }
         EOF
-        cat ./problem-matcher.json
-        echo "::add-matcher::$(pwd)/problem-matcher.json"
+        cat ./problem-matcher-lint-shell.json
+        echo "::add-matcher::$(pwd)/problem-matcher-lint-shell.json"
 
     - name: 'Lint Shell'
       env:
         TARGET: '${{ inputs.target }}'
       shell: 'bash'
       run: |-
-        # Note that only error severity show up in the github files
-        # page. So we replace 'warning', 'style' and 'note' with 'error' to
-        # make it show up.
+        # Note that only warning and error severity show up in the github files
+        # page. So we replace 'style' and 'note' with 'warning' to make it show
+        # up.
         #
         # 'Find all bash scripts even if they don't have an explicit extension.
         git ls-files | grep -E '^([^.]+|.*\.(sh|zsh|bash))$' | xargs file --mime-type \
@@ -79,4 +79,4 @@ runs:
             --enable=all \
             --severity=style \
             --format=gcc \
-            --color=never | sed -e 's/note:/error:/g' -e 's/warning:/error:/g' -e 's/style:/error:/g'
+            --color=never | sed -e 's/note:/warning:/g' -e 's/style:/warning:/g'
