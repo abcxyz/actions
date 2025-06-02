@@ -62,6 +62,11 @@ runs:
         cat ./problem-matcher-lint-shell.json
         echo "::add-matcher::$(pwd)/problem-matcher-lint-shell.json"
 
+    - name: 'echo test'
+      shell: 'bash'
+      run: |-
+        echo "scancode/another.sh:4:6: warning: Prefer double quoting even when variables don't contain special characters. [SC2248]"
+
     - name: 'Lint Shell'
       env:
         TARGET: '${{ inputs.target }}'
