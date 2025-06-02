@@ -49,7 +49,7 @@ runs:
               "owner": "abcxyz/actions/lint-shell",
               "pattern": [
                 {
-                  "regexp": "^(.+):(\\\\d+):(\\\\d*):?\\\\s+(note|warning|error):\\\\s(.+)$",
+                  "regexp": "^(.+):(\\\\d+):(\\\\d*):?\\\\s+(note|warning|error):\\\\s(.+)\\\\s\\\\[(.+)\\\\]$",
                   "file": 1,
                   "line": 2,
                   "column": 3,
