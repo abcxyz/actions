@@ -68,11 +68,11 @@ runs:
         TARGET: '${{ inputs.target }}'
       shell: 'bash'
       run: |-
-        # Note that only warning/error severity show up in the github files
-        # page. So we replace 'style' and 'note' with 'warning' to make it show
-        # up.
-        # 
-        # Find all bash scripts even if they don't have an explicit extension.
+        # Note that only error severity show up in the github files
+        # page. So we replace 'warning', 'style' and 'note' with 'error' to
+        # make it show up.
+        #
+        # 'Find all bash scripts even if they don't have an explicit extension.
         git ls-files | grep -E '^([^.]+|.*\.(sh|zsh|bash))$' | xargs file --mime-type \
           | grep "text/x-shellscript" | awk '{ print substr($1, 1, length($1)-1) }' \
           | xargs shellcheck \
@@ -80,4 +80,4 @@ runs:
             --enable=all \
             --severity=style \
             --format=gcc \
-            --color=never | sed 's/note:/warning:/g' | sed 's/style:/warning:/g'
+            --color=never | sed 's/(note|style|warning):/error:/g'
