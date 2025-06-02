@@ -40,6 +40,8 @@ runs:
       shell: 'bash'
       working-directory: '${{ inputs.target }}'
       run: |
+        # NOTE: "code" must be a number. If you parse something other than a
+        # number then the annotation will not show up in the files UI.
         cat > ./problem-matcher-lint-shell.json <<EOF
         {
           "problemMatcher": [
@@ -47,9 +49,10 @@ runs:
               "owner": "abcxyz/actions/lint-shell",
               "pattern": [
                 {
-                  "regexp": "^(.*):(\\\\d+):(\\\\d+):\\\\s+(?:fatal\\\\s+)?(warning|error):\\\\s+(.*)$",
+                  "regexp": "^(.+):(\\\\d+):(\\\\d*):?\\\\s+(note|warning|error):\\\\s(.+)$",
                   "file": 1,
                   "line": 2,
+                  "column": 3,
                   "severity": 4,
                   "message": 5
                 }
@@ -60,11 +63,6 @@ runs:
         EOF
         cat ./problem-matcher-lint-shell.json
         echo "::add-matcher::$(pwd)/problem-matcher-lint-shell.json"
-
-    - name: 'echo test'
-      shell: 'bash'
-      run: |-
-        echo "scancode/another.sh:4:6: warning: Prefer double quoting even when variables don't contain special characters. [SC2248]"
 
     - name: 'Lint Shell'
       env:
