@@ -73,7 +73,7 @@ runs:
         {
           "problemMatcher": [
             {
-              "owner": "abcxyz/actions",
+              "owner": "abcxyz/actions/lint-docker",
               "pattern": [
                 {
                   "regexp": "^(.+):(\\\\d+)\\\\s(.+)\\\\s(error|warning|info):\\\\s(.+)$",

@@ -44,7 +44,7 @@ runs:
         {
           "problemMatcher": [
             {
-              "owner": "abcxyz/actions",
+              "owner": "abcxyz/actions/lint-shell",
               "pattern": [
                 {
                   "regexp": "^(.+):(\\\\d+):(\\\\d*):?\\\\s+(note|warning|error):\\\\s(.+)\\\\s\\\\[(.+)\\\\]$",
