@@ -80,4 +80,4 @@ runs:
             --enable=all \
             --severity=style \
             --format=gcc \
-            --color=never | sed 's/(note|style|warning):/error:/g'
+            --color=never | sed -e 's/note:/error:/g' -e 's/warning:/error:/g' -e 's/style:/error:/g'
