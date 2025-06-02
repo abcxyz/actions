@@ -99,7 +99,9 @@ runs:
       env:
         OUTPUT_FILE: '${{ steps.load-default-config.outputs.output-file }}'
       run: |
-        git ls-files | grep -E '(dockerfile|Dockerfile)' | xargs hadolint -c "${OUTPUT_FILE}" --format=tty --no-color
+        # Note that only warning and error severity show up in the github files
+        # page. So we replace 'info' with 'warning' to make it show up.
+        git ls-files | grep -E '(dockerfile|Dockerfile)' | xargs hadolint -c "${OUTPUT_FILE}" --format=tty --no-color | sed -e 's/info:/warning:/g'
 
     - name: 'Lint (custom configuration)'
       if: |-
@@ -107,4 +109,6 @@ runs:
       shell: 'bash'
       working-directory: '${{ inputs.target }}'
       run: |-
-        git ls-files | grep -E '(dockerfile|Dockerfile)' | xargs hadolint --format=tty --no-color
+        # Note that only warning and error severity show up in the github files
+        # page. So we replace 'info' with 'warning' to make it show up.
+        git ls-files | grep -E '(dockerfile|Dockerfile)' | xargs hadolint --format=tty --no-color | sed -e 's/info:/warning:/g'
