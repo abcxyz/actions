@@ -51,8 +51,7 @@ runs:
                   "file": 1,
                   "line": 2,
                   "severity": 4,
-                  "message": 5,
-                  "code": 6
+                  "message": 5
                 }
               ]
             }
