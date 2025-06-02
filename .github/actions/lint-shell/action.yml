@@ -47,7 +47,7 @@ runs:
               "owner": "abcxyz/actions/lint-shell",
               "pattern": [
                 {
-                  "regexp": "^(.+):(\\\\d+):(\\\\d*):?\\\\s+(note|warning|error):\\\\s(.+)\\\\s\\\\[(.+)\\\\]$",
+                  "regexp": "^(.*):(\\\\d+):(\\\\d+):\\\\s+(?:fatal\\\\s+)?(warning|error):\\\\s+(.*)$",
                   "file": 1,
                   "line": 2,
                   "severity": 4,
