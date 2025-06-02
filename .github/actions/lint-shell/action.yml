@@ -36,17 +36,49 @@ runs:
         cache_key: '${{ runner.os }}_${{ runner.arch }}_shellcheck_${{ inputs.shellcheck_version }}'
         add_to_path: true
 
+    - name: 'Add problem matcher'
+      shell: 'bash'
+      working-directory: '${{ inputs.target }}'
+      run: |
+        # NOTE: "code" must be a number. If you parse something other than a
+        # number then the annotation will not show up in the files UI.
+        cat > ./problem-matcher-lint-shell.json <<EOF
+        {
+          "problemMatcher": [
+            {
+              "owner": "abcxyz/actions/lint-shell",
+              "pattern": [
+                {
+                  "regexp": "^(.*):(\\\\d+):(\\\\d+):\\\\s+(?:fatal\\\\s+)?(warning|error):\\\\s+(.*)$",
+                  "file": 1,
+                  "line": 2,
+                  "column": 3,
+                  "severity": 4,
+                  "message": 5
+                }
+              ]
+            }
+          ]
+        }
+        EOF
+        cat ./problem-matcher-lint-shell.json
+        echo "::add-matcher::$(pwd)/problem-matcher-lint-shell.json"
+
     - name: 'Lint Shell'
       env:
         TARGET: '${{ inputs.target }}'
       shell: 'bash'
       run: |-
-        # Find all bash scripts even if they don't have an explicit extension.
+        # Note that only warning and error severity show up in the github files
+        # page. So we replace 'style' and 'note' with 'warning' to make it show
+        # up.
+        #
+        # 'Find all bash scripts even if they don't have an explicit extension.
         git ls-files | grep -E '^([^.]+|.*\.(sh|zsh|bash))$' | xargs file --mime-type \
           | grep "text/x-shellscript" | awk '{ print substr($1, 1, length($1)-1) }' \
           | xargs shellcheck \
             --check-sourced \
             --enable=all \
             --severity=style \
-            --format=tty \
-            --color=always
+            --format=gcc \
+            --color=never | sed -e 's/note:/warning:/g' -e 's/style:/warning:/g'

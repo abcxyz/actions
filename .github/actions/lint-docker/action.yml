@@ -69,11 +69,11 @@ runs:
       shell: 'bash'
       working-directory: '${{ inputs.target }}'
       run: |
-        cat > ./problem-matcher.json <<EOF
+        cat > ./problem-matcher-lint-docker.json <<EOF
         {
           "problemMatcher": [
             {
-              "owner": "abcxyz/actions",
+              "owner": "abcxyz/actions/lint-docker",
               "pattern": [
                 {
                   "regexp": "^(.+):(\\\\d+)\\\\s(.+)\\\\s(error|warning|info):\\\\s(.+)$",
@@ -88,8 +88,8 @@ runs:
           ]
         }
         EOF
-        cat ./problem-matcher.json
-        echo "::add-matcher::$(pwd)/problem-matcher.json"
+        cat ./problem-matcher-lint-docker.json
+        echo "::add-matcher::$(pwd)/problem-matcher-lint-docker.json"
 
     - name: 'Lint (default configuration)'
       if: |-
@@ -99,7 +99,9 @@ runs:
       env:
         OUTPUT_FILE: '${{ steps.load-default-config.outputs.output-file }}'
       run: |
-        git ls-files | grep -E '(dockerfile|Dockerfile)' | xargs hadolint -c "${OUTPUT_FILE}" --format=tty --no-color
+        # Note that only warning and error severity show up in the github files
+        # page. So we replace 'info' with 'warning' to make it show up.
+        git ls-files | grep -E '(dockerfile|Dockerfile)' | xargs hadolint -c "${OUTPUT_FILE}" --format=tty --no-color | sed -e 's/info:/warning:/g'
 
     - name: 'Lint (custom configuration)'
       if: |-
@@ -107,4 +109,6 @@ runs:
       shell: 'bash'
       working-directory: '${{ inputs.target }}'
       run: |-
-        git ls-files | grep -E '(dockerfile|Dockerfile)' | xargs hadolint --format=tty --no-color
+        # Note that only warning and error severity show up in the github files
+        # page. So we replace 'info' with 'warning' to make it show up.
+        git ls-files | grep -E '(dockerfile|Dockerfile)' | xargs hadolint --format=tty --no-color | sed -e 's/info:/warning:/g'
