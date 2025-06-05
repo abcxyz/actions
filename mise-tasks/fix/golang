@@ -2,7 +2,7 @@
 #MISE description="Fix golang files"
 #MISE quiet=true
 #MISE tools={ "go:github.com/daixiang0/gci" = "0.13.6", yq = "4.45.4", gofumpt = "0.8.0",  }
-DEFAULT_GOLANG_CONFIG="${DEFAULT_GOLANG_CONFIG:-https://raw.githubusercontent.com/abcxyz/actions/main/.golangci.yml}"
+DEFAULT_GOLANG_CONFIG="${DEFAULT_GOLANG_CONFIG:-https://raw.githubusercontent.com/abcxyz/actions/main/default.golangci.yml}"
 HASH="$(echo -n "DEFAULT_GOLANG_CONFIG" | sha256sum | cut -d' ' -f1)"
 ABC_MISE_CACHE="${HOME}/.cache/abc/mise"
 GOLANG_CONFIG="${ABC_MISE_CACHE}/${HASH}.golangci.yml"
