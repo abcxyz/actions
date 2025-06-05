@@ -1,5 +1,5 @@
 #!/bin/bash
-#MISE description="Lint golang files"
+#MISE description="Fix golang files"
 #MISE quiet=true
 #MISE tools={ "go:github.com/daixiang0/gci" = "0.13.6", yq = "4.45.4", gofumpt = "0.8.0",  }
 DEFAULT_GOLANG_CONFIG="${DEFAULT_GOLANG_CONFIG:-https://raw.githubusercontent.com/abcxyz/actions/main/.golangci.yml}"
@@ -28,7 +28,7 @@ if [[ "${gci_enabled}" == "gci" ]]; then
 
     gci_args=()
     while IFS='' read -r section; do 
-        gci_args+=(-s "\"${section}\"")
+        gci_args+=("-s=${section}")
     done < <(echo "${sections}")
     if [[ "${skip_generated}" == "true" ]]; then
         gci_args+=(--skip-generated)
@@ -39,8 +39,8 @@ if [[ "${gci_enabled}" == "gci" ]]; then
     gci write "${gci_args[@]}" .
 fi
 
-if [[ "${gofmt_enabled}" == "gofmt" ||  ]]; then
-    go fmt .
+if [[ "${gofmt_enabled}" == "gofmt"  ]]; then
+    go fmt ./...
 fi
 
 if [[ "${gofumpt_enabled}" == "gofumpt" ]]; then
