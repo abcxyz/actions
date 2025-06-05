@@ -2,11 +2,17 @@
 #MISE description="Lint golang files"
 #MISE quiet=true
 #MISE tools={ golangci-lint = "1.64" }
-DEFAULT_GOLANG_CONFIG="https://raw.githubusercontent.com/abcxyz/actions/main/default.golangci.yml"
+DEFAULT_GOLANG_CONFIG="${DEFAULT_GOLANG_CONFIG:-https://raw.githubusercontent.com/abcxyz/actions/main/.golangci.yml}"
+HASH="$(echo -n "DEFAULT_GOLANG_CONFIG" | sha256sum | cut -d' ' -f1)"
 ABC_MISE_CACHE="${HOME}/.cache/abc/mise"
-GOLANG_CONFIG="${ABC_MISE_CACHE}/default.golangci.yml"
+GOLANG_CONFIG="${ABC_MISE_CACHE}/${HASH}.golangci.yml"
 mkdir -p "${ABC_MISE_CACHE}"
-if [[ ! -f "${GOLANG_CONFIG}" ]]; then
-    wget "${DEFAULT_GOLANG_CONFIG}" -P "${ABC_MISE_CACHE}"
+if [[ -f .golangci.yml ]]; then
+    GOLANG_CONFIG=".golangci.yml"
+elif [[ -f .golangci.yaml ]]; then
+    GOLANG_CONFIG=".golangci.yaml"
+elif [[ ! -f "${GOLANG_CONFIG}" ]]; then
+    echo "Fetching golang config: ${DEFAULT_GOLANG_CONFIG}"
+    wget "${DEFAULT_GOLANG_CONFIG}" -O "${GOLANG_CONFIG}"
 fi
-golangci-lint run -c "${GOLANG_CONFIG}" ./...
+echo "golang config: ${GOLANG_CONFIG}"

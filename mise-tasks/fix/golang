@@ -1,0 +1,48 @@
+#!/bin/bash
+#MISE description="Lint golang files"
+#MISE quiet=true
+#MISE tools={ "go:github.com/daixiang0/gci" = "0.13.6", yq = "4.45.4", gofumpt = "0.8.0",  }
+DEFAULT_GOLANG_CONFIG="${DEFAULT_GOLANG_CONFIG:-https://raw.githubusercontent.com/abcxyz/actions/main/.golangci.yml}"
+HASH="$(echo -n "DEFAULT_GOLANG_CONFIG" | sha256sum | cut -d' ' -f1)"
+ABC_MISE_CACHE="${HOME}/.cache/abc/mise"
+GOLANG_CONFIG="${ABC_MISE_CACHE}/${HASH}.golangci.yml"
+mkdir -p "${ABC_MISE_CACHE}"
+if [[ -f .golangci.yml ]]; then
+    GOLANG_CONFIG=".golangci.yml"
+elif [[ -f .golangci.yaml ]]; then
+    GOLANG_CONFIG=".golangci.yaml"
+elif [[ ! -f "${GOLANG_CONFIG}" ]]; then
+    echo "Fetching golang config: ${DEFAULT_GOLANG_CONFIG}"
+    wget "${DEFAULT_GOLANG_CONFIG}" -O "${GOLANG_CONFIG}"
+fi
+echo "golang config: ${GOLANG_CONFIG}"
+
+gci_enabled="$(yq -r '.linters.enable | map(select(. == "gci")) | .[]' "${GOLANG_CONFIG}")"
+gofmt_enabled="$(yq -r '.linters.enable | map(select(. == "gofmt")) | .[]' "${GOLANG_CONFIG}")"
+gofumpt_enabled="$(yq -r '.linters.enable | map(select(. == "gofumpt")) | .[]' "${GOLANG_CONFIG}")"
+
+if [[ "${gci_enabled}" == "gci" ]]; then
+    sections="$(yq -r '.linters-settings.gci.sections.[]' "${GOLANG_CONFIG}")"
+    skip_generated="$(yq -r '.linters-settings.gci.skip-generated' "${GOLANG_CONFIG}")"
+    custom_order="$(yq -r '.linters-settings.gci.custom-order' "${GOLANG_CONFIG}")"
+
+    gci_args=()
+    while IFS='' read -r section; do 
+    gci_args+=(-s "\"${section}\"")
+    done < <(echo "${sections}")
+    if [[ "${skip_generated}" == "true" ]]; then
+        gci_args+=(--skip-generated)
+    fi
+    if [[ "${custom_order}" == "true" ]]; then
+        gci_args+=(--custom-order)
+    fi
+    echo gci write "${gci_args[@]}" .
+fi
+
+if [[ "${gofmt_enabled}" == "gofmt" ||  ]]; then
+    go fmt .
+fi
+
+if [[ "${gofumpt_enabled}" == "gofumpt" ]]; then
+    gofumpt -l -w .
+fi
