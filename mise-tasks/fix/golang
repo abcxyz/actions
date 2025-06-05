@@ -28,7 +28,7 @@ if [[ "${gci_enabled}" == "gci" ]]; then
 
     gci_args=()
     while IFS='' read -r section; do 
-    gci_args+=(-s "\"${section}\"")
+        gci_args+=(-s "\"${section}\"")
     done < <(echo "${sections}")
     if [[ "${skip_generated}" == "true" ]]; then
         gci_args+=(--skip-generated)
@@ -36,7 +36,7 @@ if [[ "${gci_enabled}" == "gci" ]]; then
     if [[ "${custom_order}" == "true" ]]; then
         gci_args+=(--custom-order)
     fi
-    echo gci write "${gci_args[@]}" .
+    gci write "${gci_args[@]}" .
 fi
 
 if [[ "${gofmt_enabled}" == "gofmt" ||  ]]; then

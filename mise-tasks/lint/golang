@@ -16,3 +16,4 @@ elif [[ ! -f "${GOLANG_CONFIG}" ]]; then
     wget "${DEFAULT_GOLANG_CONFIG}" -O "${GOLANG_CONFIG}"
 fi
 echo "golang config: ${GOLANG_CONFIG}"
+golangci-lint run -c "${GOLANG_CONFIG}" ./...
