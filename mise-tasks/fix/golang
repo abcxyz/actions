@@ -39,8 +39,12 @@ if [[ "${gci_enabled}" == "gci" ]]; then
     gci write "${gci_args[@]}" .
 fi
 
-if [[ "${gofmt_enabled}" == "gofmt"  ]]; then
-    go fmt ./...
+if [[ "${gofmt_enabled}" == "gofmt" ]]; then
+    if which go; then
+        go fmt ./...
+    else
+        echo "Skipping 'go fmt' because no go binary was found - Did you forget to 'mise use go'?"
+    fi
 fi
 
 if [[ "${gofumpt_enabled}" == "gofumpt" ]]; then
