@@ -2,7 +2,7 @@
 #MISE description="Lint terraform files"
 #MISE quiet=true
 #MISE tools={ "ubi:abcxyz/terraform-linter" = "latest" }
-if which terraform; then
+if which terraform >/dev/null; then
     terraform fmt -recursive -check
 else
     echo "Skipping 'terraform fmt' because no binary was found - Did you forget to 'mise use terraform'?"

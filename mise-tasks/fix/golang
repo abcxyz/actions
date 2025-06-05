@@ -40,7 +40,7 @@ if [[ "${gci_enabled}" == "gci" ]]; then
 fi
 
 if [[ "${gofmt_enabled}" == "gofmt" ]]; then
-    if which go; then
+    if which go >/dev/null; then
         go fmt ./...
     else
         echo "Skipping 'go fmt' because no go binary was found - Did you forget to 'mise use go'?"
