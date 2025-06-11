@@ -240,10 +240,10 @@ runs:
           git add -A
           git commit --allow-empty --message "automation: compute changed files"
 
-          CHANGED_PATHS="$(git diff HEAD~1 --name-only --diff-filter=d | jq --compact-output --raw-output --raw-input --slurp 'split("\n") | map(select(. != ""))')"
+          CHANGED_PATHS="$(git diff HEAD~1 --no-renames --name-only --diff-filter=d | jq --compact-output --raw-output --raw-input --slurp 'split("\n") | map(select(. != ""))')"
           echo "::debug::computed changed paths: ${CHANGED_PATHS}"
 
-          DELETED_PATHS="$(git diff HEAD~1 --name-only --diff-filter=D | jq --compact-output --raw-output --raw-input --slurp 'split("\n") | map(select(. != ""))')"
+          DELETED_PATHS="$(git diff HEAD~1 --no-renames --name-only --diff-filter=D | jq --compact-output --raw-output --raw-input --slurp 'split("\n") | map(select(. != ""))')"
           echo "::debug::computed deleted paths: ${DELETED_PATHS}"
         else
           # Ensure the given paths are a single line of valid JSON.
