@@ -282,7 +282,7 @@ jobs:
       GO_LINT_GOLANGCI_URL: |-
         ${{ vars.GO_LINT_GOLANGCI_URL || 'https://raw.githubusercontent.com/abcxyz/actions/main/default.golangci.yml' }}
       GO_LINT_GOLANGCI_LINT_VERSION: |-
-        ${{ vars.GO_LINT_GOLANGCI_LINT_VERSION || 'v1.64' }}
+        ${{ vars.GO_LINT_GOLANGCI_LINT_VERSION || 'v2.2' }}
 
     steps:
       - name: 'Checkout'
