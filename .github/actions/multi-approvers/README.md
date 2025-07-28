@@ -158,3 +158,11 @@ jobs:
 This MUST be run after making changes to code under the `src` directory.
 
 `npm run test`: runs tests.
+
+## Caveats
+
+It's a known limitation that the check may need to be manually re-triggered if this workflow is used as a part of rulesets.
+
+This is because `pull_review_request` is not one of the [supported triggers](https://docs.github.com/en/enterprise-cloud@latest/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#supported-event-triggers) in ruleset workflows.
+
+See [relevant issue](https://github.com/abcxyz/actions/issues/83) for more details.
