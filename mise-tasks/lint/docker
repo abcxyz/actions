@@ -1,0 +1,12 @@
+#!/bin/bash
+#MISE description="Lint java files"
+#MISE quiet=true
+#MISE tools={ "ubi:hadolint/hadolint" = "latest" }
+DEFAULT_HADOLINT_CONFIG="https://raw.githubusercontent.com/abcxyz/actions/main/.hadolint.yml"
+ABC_MISE_CACHE="${HOME}/.cache/abc/mise"
+HADOLINT_CONFIG="${ABC_MISE_CACHE}/.hadolint.yml"
+mkdir -p "${ABC_MISE_CACHE}"
+if [[ ! -f "${HADOLINT_CONFIG}" ]]; then
+    wget "${DEFAULT_HADOLINT_CONFIG}" -P "${ABC_MISE_CACHE}"
+fi
+git ls-files | grep -E '(dockerfile|Dockerfile)' | xargs hadolint -c "${HADOLINT_CONFIG}" --format=tty
