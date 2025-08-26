@@ -27,6 +27,7 @@ function newFakeCore(inputs: { [key: string]: string }): Core {
     getInput: (name: string) => inputs[name],
     info: () => {},
     setFailed: () => {},
+    notice: () => {},
   } as unknown as Core;
 }
 
@@ -117,6 +118,80 @@ test("#main", { concurrency: true }, async (suite) => {
       assert.equal(
         failMsg,
         "Multi-approvers action failed: invalid allowlisted user ID: [a]. Full input (user-id-allowlist): [123, 9, 456, a, b]",
+      );
+    },
+  );
+
+  await suite.test(
+    "should fail if user-id-allowlist contains an empty entry",
+    async (t) => {
+      const invalidAllowlistInput = "123,,456";
+      const core = newFakeCore({
+        token: "fake-token",
+        team: "fake-team",
+        "user-id-allowlist": invalidAllowlistInput,
+      });
+      const setFailed = t.mock.method(core, "setFailed", () => {});
+      const context = createFakeContext();
+
+      await main(core, context);
+
+      assert.equal(setFailed.mock.calls.length, 1);
+      const failMsg = String(setFailed.mock.calls[0].arguments[0]);
+
+      assert.equal(
+        failMsg,
+        "Multi-approvers action failed: invalid empty user ID found in the list. Full input (user-id-allowlist): [123,,456]",
+      );
+    },
+  );
+
+  await suite.test(
+    "should not fail parsing for an empty user-id-allowlist",
+    async (t) => {
+      const core = newFakeCore({
+        token: "fake-token",
+        team: "fake-team",
+        "user-id-allowlist": "",
+      });
+      const setFailed = t.mock.method(core, "setFailed", () => {});
+      const context = createFakeContext();
+
+      await main(core, context);
+
+      // It is expected to fail, but for reasons other than parsing.
+      assert.equal(setFailed.mock.calls.length, 1);
+      const failMsg = String(setFailed.mock.calls[0].arguments[0]);
+
+      assert.equal(
+        failMsg.includes("invalid allowlisted user ID: []"),
+        false,
+        "Should not fail with the original empty string parsing error",
+      );
+    },
+  );
+
+  await suite.test(
+    "should not fail parsing for a whitespace-only user-id-allowlist",
+    async (t) => {
+      const core = newFakeCore({
+        token: "fake-token",
+        team: "fake-team",
+        "user-id-allowlist": "   ",
+      });
+      const setFailed = t.mock.method(core, "setFailed", () => {});
+      const context = createFakeContext();
+
+      await main(core, context);
+
+      // As with the empty string test, we expect a failure, but not a parsing failure.
+      assert.equal(setFailed.mock.calls.length, 1);
+      const failMsg = String(setFailed.mock.calls[0].arguments[0]);
+
+      assert.equal(
+        failMsg.includes("invalid allowlisted user ID: []"),
+        false,
+        "Should not fail with the original empty string parsing error",
       );
     },
   );
