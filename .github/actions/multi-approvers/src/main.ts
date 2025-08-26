@@ -35,6 +35,10 @@ function getEventName(rawEventName: string): EventName {
 }
 
 function parseUserIds(raw: string): Set<number> {
+  if (raw === "") {
+    return new Set();
+  }
+  
   const ids = raw.split(",").map((v) => {
     const trimmedV = v.trim();
     const n = parseInt(trimmedV, 10);
