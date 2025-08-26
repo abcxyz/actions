@@ -35,8 +35,18 @@ function getEventName(rawEventName: string): EventName {
 }
 
 function parseUserIds(raw: string): Set<number> {
+  // return an empty set if the input string is null, empty, or just whitespace
+  if (!raw || raw.trim() === "") {
+    return new Set<number>();
+  }
+
   const ids = raw.split(",").map((v) => {
     const trimmedV = v.trim();
+    if (trimmedV === "") {
+      throw new Error(
+        `Invalid empty user ID found in the list. Full input (user-id-allowlist): [${raw}]`,
+      );
+    }
     const n = parseInt(trimmedV, 10);
     if (isNaN(n)) {
       throw new Error(
