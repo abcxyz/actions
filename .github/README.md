@@ -3,7 +3,7 @@
 You will find all reusable `actions` and `workflows` in their respective
 subfolders. Unfortunately, there is no way to distinguish workflows that only
 run on this repository from ones that are intended to run elsewhere via
-workflow_call. As such, we have made the decision to prefix workflows that run
+`workflow_call`. As such, we have made the decision to prefix workflows that run
 on this repository with a `.`. Workflows intended to be run as reusable
 workflows in other repositories will not be prefixed with `.` and additionally
 will only have the `workflow_call` trigger.
