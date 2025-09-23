@@ -23,6 +23,11 @@ inputs:
     description: 'The directory upon which to lint Terraform configurations.'
     type: 'string'
     required: true
+  terraform_linter_version:
+    description: 'The version of the terraform linter to install and use.'
+    type: 'string'
+    required: true
+    default: '0.2.0'
 
 runs:
   using: 'composite'
@@ -39,8 +44,18 @@ runs:
       run: |-
         terraform fmt -recursive -check -diff
 
-    - name: 'abcxyz Terraform linter'
-      if: 'always()'
-      uses: 'abcxyz/terraform-linter@main' # ratchet:exclude
+    - name: 'Setup terraform-linter'
+      uses: 'abcxyz/actions/.github/actions/setup-binary@main' # ratchet:exclude
       with:
-        paths: '${{ inputs.directory }}'
+        download_url: 'https://github.com/abcxyz/terraform-linter/releases/download/v${{ inputs.terraform_linter_version }}/terraform-linter_linux_amd64'
+        install_path: '${{ runner.temp }}/.terraform-linter'
+        binary_subpath: 'terraform-linter_linux_amd64/terraform-linter'
+        cache_key: '${{ runner.os }}_${{ runner.arch }}_terraform_linter_${{ inputs.terraform_linter_version }}'
+        add_to_path: true
+
+    - name: 'Run abcxyz/terraform-linter'
+      shell: 'bash'
+      env:
+        LINT_PATHS: '${{ inputs.directory }}'
+      run: |-
+        terraform-linter lint ${LINT_PATHS}
