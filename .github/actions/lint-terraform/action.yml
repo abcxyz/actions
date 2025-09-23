@@ -49,9 +49,10 @@ runs:
       with:
         download_url: 'https://github.com/abcxyz/terraform-linter/releases/download/v${{ inputs.terraform_linter_version }}/terraform-linter_linux_amd64'
         install_path: '${{ runner.temp }}/.terraform-linter'
-        binary_subpath: 'terraform-linter_linux_amd64/terraform-linter'
+        binary_subpath: 'terraform-linter_linux_amd64'
         cache_key: '${{ runner.os }}_${{ runner.arch }}_terraform_linter_${{ inputs.terraform_linter_version }}'
         add_to_path: true
+        destination_subpath: 'terraform-linter'
 
     - name: 'Run abcxyz/terraform-linter'
       shell: 'bash'
