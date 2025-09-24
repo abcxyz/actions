@@ -1,0 +1,34 @@
+name: 'lint-ratchet'
+description: 'Run ratchet lint against the provided configurations.'
+inputs:
+  files:
+    description: 'Files to lint'
+    default: '.'
+  ratchet_version:
+    description: 'Version of ratchet to use'
+    default: '0.11.4'
+  token:
+    description: 'Token to use for requests'
+    required: false
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Setup ratchet'
+      uses: 'abcxyz/actions/.github/actions/setup-binary@main' # ratchet:exclude
+      with:
+        download_url: 'https://github.com/sethvargo/ratchet/releases/download/v${{ inputs.ratchet_version }}/ratchet_${{ inputs.ratchet_version }}_linux_amd64.tar.gz'
+        install_path: '${{ runner.temp }}/.ratchet'
+        binary_subpath: 'ratchet_${{ inputs.ratchet_version }}_linux_amd64/ratchet'
+        cache_key: '${{ runner.os }}_${{ runner.arch }}_terraform_linter_${{ inputs.ratchet_version }}'
+        add_to_path: true
+
+    - name: 'Run ratchet lint'
+      shell: 'bash'
+      env:
+        GITHUB_TOKEN: '${{ inputs.token }}' # for quota and auth
+        RATCHET_FILES: '${{ inputs.files }}'
+      run: |-
+        shopt -s dotglob
+        shopt -s nullglob
+        ratchet lint ${RATCHET_FILES}

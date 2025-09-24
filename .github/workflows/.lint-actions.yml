@@ -109,7 +109,7 @@ jobs:
             TARGETS+=("yaml")
           fi
           if match_files '.github/(actions|workflows)/.*\.(yaml|yml)$'; then
-            TARGETS+=("github" "ratchet")
+            TARGETS+=("github")
           fi
           if match_files '.*(\.dockerfile|Dockerfile)$'; then
             TARGETS+=("docker")
@@ -229,13 +229,6 @@ jobs:
           yamllint_url: '${{ env.YAML_LINT_YAMLLINT_URL }}'
           yamllint_version: '${{ env.YAML_LINT_YAMLLINT_VERSION }}'
           target: '${{ env.YAML_LINT_TARGET }}'
-
-      - name: '[GITHUB] lint ratchet'
-        if: |
-          matrix.lint-target == 'ratchet'
-        uses: 'sethvargo/ratchet@main' # ratchet:exclude
-        with:
-          files: './.github/actions/**/*.yml ./.github/workflows/*.yml'
 
       - name: '[GITHUB] lint actions'
         if: |
