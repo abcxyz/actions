@@ -33,7 +33,7 @@ inputs:
   golangci_lint_version:
     description: 'Version of golangci linter to use'
     type: 'string'
-    default: 'v2.2'
+    default: 'v2.5'
 
 runs:
   using: 'composite'
