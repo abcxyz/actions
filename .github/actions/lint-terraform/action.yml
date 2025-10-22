@@ -24,11 +24,11 @@ inputs:
     type: 'string'
     required: true
     default: '.'
-  terraform_linter_version:
-    description: 'The version of the terraform linter to install and use.'
+  linter_config_path:
+    description: 'Path to the linter configuration file to use (e.g., .tf_linter.yaml).'
     type: 'string'
-    required: true
-    default: '0.2.0'
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -61,4 +61,11 @@ runs:
         LINT_PATHS: |-
           ${{ inputs.directory || '.' }}
       run: |-
-        terraform-linter lint ${LINT_PATHS}
+        CONFIG_FLAG=""
+        # Only set the flag if the input is provided
+        if [[ -n "${{ inputs.linter_config_path }}" ]]; then
+          CONFIG_FLAG="--config=${{ inputs.linter_config_path }}"
+        fi
+        
+        # Pass the config flag before the path
+        terraform-linter lint ${CONFIG_FLAG} ${LINT_PATHS}
