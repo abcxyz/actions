@@ -82,7 +82,7 @@ jobs:
                 "maxSessionTurns": 25
               },
               "telemetry": {
-                "enabled": "false"
+                "enabled": "false",
                 "target": "gcp"
               },
               "mcpServers": {
