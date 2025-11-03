@@ -3,3 +3,6 @@ gha-creds-*.json
 
 # Ignore the Node module cache.
 **/node_modules/
+
+# gemini-cli settings
+.gemini/
