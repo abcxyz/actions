@@ -15,6 +15,16 @@ name: 'readability'
 
 on:
   workflow_call:
+    inputs:
+      readability_guide:
+        description: 'The URL to a readability guide file.'
+        type: 'string'
+        default: 'https://raw.githubusercontent.com/abcxyz/actions/main/.readability.md'
+      bot_voice_guide:
+        description: 'A hint to how the AI should voice its comments. This should be a known character or voice.'
+        type: 'string'
+        default: 'the System AI from the Dungeon Crawler Carl series of novels written by Matt Dinniman'
+
   pull_request:
   merge_group:
 
@@ -47,13 +57,15 @@ jobs:
 
       - name: 'Download readability guide'
         id: 'download-readability-guide'
+        env:
+          READABILITY_FILE: '${{ inputs.readability_guide }}'
         run: |-
           # Create a unique output file outside of the checkout.
           READABILITY_MD="${RUNNER_TEMP}/${GITHUB_SHA:0:7}.readability.md"
 
           # Download the file, passing in authentication to get a higher rate
           # limit: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limits-for-requests-from-github-actions
-          curl "${{ env.READABILITY_GUIDE }}" \
+          curl "${{ env.READABILITY_FILE }}" \
           --silent \
           --fail \
           --location \
@@ -74,6 +86,7 @@ jobs:
           PULL_REQUEST_NUMBER: '${{ github.event.pull_request.number || github.event.issue.number }}'
           REPOSITORY: '${{ github.repository }}'
           READABILITY_FILE: '${{ steps.download-readability-guide.outputs.output-file }}'
+          BOT_VOICE_GUIDE: '${{ inputs.bot_voice_guide }}'
         with:
           gemini_api_key: '${{ secrets.GEMINI_API_KEY }}'
           settings: |-
@@ -193,14 +206,17 @@ jobs:
 
             ### Step 2: Formulate Review Comments
 
-            For each identified issue, formulate a review comment adhering to the following guidelines.
+            For each identified issue, formulate a review comment adhering to the following guidelines. You **MUST** only create review
+            comments that are ACTIONABLE. A comment pointing out that the code is great, or that the author did something that met the
+            style guide just adds noise making you less effective. All comments **MUST** come with a task for the author or they should
+            **NOT** be posted.
 
             #### Review Criteria (in order of priority)
 
             1. **Maintainability:** Assess readability, modularity, and adherence to established language idioms and style
             guides (e.g., Python PEP 8, Google Java Style Guide). If no style guide is specified, default to the idiomatic
-            standard for the language. Team specific sytle guide content is found at ${READABILITY_FILE}.
-            These style guides supersedes all other industry standards.
+            standard for the language. Team specific style guide content is found at ${{ env.READABILITY_FILE }}. Read this file into
+            context and reference it in your comments when applicable. These style guides supersedes all other industry standards.
 
             2. **Modularity and Reusability:** Assess code organization, modularity, and reusability. Suggest refactoring or creating
             reusable components.
@@ -283,19 +299,9 @@ jobs:
                     <COMMENT>
                     {{SEVERITY}} {{COMMENT_TEXT}}
                     </COMMENT>
-
-            3. **Submit Final Review:** Call `mcp__github__submit_pending_pull_request_review` with a summary comment and event type "COMMENT". The available event types are "APPROVE", "REQUEST_CHANGES", and "COMMENT" - you **MUST** use "COMMENT" only. **DO NOT** use "APPROVE" or "REQUEST_CHANGES" event types. The summary comment **MUST** use this exact markdown format:
-
-                <SUMMARY>
-                ## 📋 Review Summary
-
-                A brief, high-level assessment of the Pull Request's objective and quality (2-3 sentences).
-
-                ## 🔍 General Feedback
-
-                - A bulleted list of general observations, positive highlights, or recurring patterns not suitable for inline comments.
-                - Keep this section concise and do not repeat details already covered in inline comments.
-                </SUMMARY>
+            3. **Submit Final Review:** Call `mcp__github__submit_pending_pull_request_review` with a summary comment and event type "COMMENT".
+            The available event types are "APPROVE", "REQUEST_CHANGES", and "COMMENT" - you **MUST** use "COMMENT" only. **DO NOT** use "APPROVE" or "REQUEST_CHANGES" event types.
+            The summary comment **MUST** contain no text. All of the important comments were created in section 2 of step 3.
 
             -----
 
@@ -304,6 +310,5 @@ jobs:
             Remember, you are running in a virtual machine and no one reviewing your output. Your review must be posted to GitHub
             using the MCP tools to create a pending review, add comments to the pending review, and submit the pending review.
 
-            Human readers need to feel connected to the character, in this case you, through the style of the your voice. All of your
-            review comments should be written in the style of the System AI from the Dungeon Crawler Carl series of novels written
-            by Matt Dinniman.
+            Human readers need to feel connected to the character, in this case you, through the style of your voice. All of your
+            review comments should be written in the style of ${{ env.BOT_VOICE_GUIDE }}.
