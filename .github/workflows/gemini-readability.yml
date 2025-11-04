@@ -14,17 +14,6 @@
 name: 'readability'
 
 on:
-  workflow_call:
-    inputs:
-      readability_guide:
-        description: 'The URL to a readability guide file.'
-        type: 'string'
-        default: 'https://raw.githubusercontent.com/abcxyz/actions/main/.readability.md'
-      bot_voice_guide:
-        description: 'A hint to how the AI should voice its comments. This should be a known character or voice.'
-        type: 'string'
-        default: 'the System AI from the Dungeon Crawler Carl series of novels written by Matt Dinniman'
-
   pull_request:
   merge_group:
 
@@ -41,6 +30,12 @@ defaults:
   run:
     shell: 'bash'
 
+env:
+  READABILITY_GUIDE: |-
+    ${{ vars.READABILITY_BOT_READABILITY_GUIDE || 'https://raw.githubusercontent.com/abcxyz/actions/main/.readability.md' }}
+  READABILITY_BOT_VOICE: |-
+    ${{ vars.READABILITY_BOT_VOICE_GUIDE || 'the System AI from the Dungeon Crawler Carl series of novels written by Matt Dinniman' }}
+
 jobs:
   check:
     runs-on: 'ubuntu-latest'
@@ -54,15 +49,13 @@ jobs:
 
       - name: 'Download readability guide'
         id: 'download-readability-guide'
-        env:
-          READABILITY_FILE: '${{ inputs.readability_guide }}'
         run: |-
           # Create a unique output file outside of the checkout.
           READABILITY_MD="${RUNNER_TEMP}/${GITHUB_SHA:0:7}.readability.md"
 
           # Download the file, passing in authentication to get a higher rate
           # limit: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limits-for-requests-from-github-actions
-          curl "https://raw.githubusercontent.com/abcxyz/actions/main/.readability.md" \
+          curl "${{ env.READABILITY_GUIDE }}" \
           --silent \
           --fail \
           --location \
@@ -83,7 +76,6 @@ jobs:
           PULL_REQUEST_NUMBER: '${{ github.event.pull_request.number || github.event.issue.number }}'
           REPOSITORY: '${{ github.repository }}'
           READABILITY_FILE: '${{ steps.download-readability-guide.outputs.output-file }}'
-          BOT_VOICE_GUIDE: '${{ inputs.bot_voice_guide }}'
         with:
           gemini_api_key: '${{ secrets.GEMINI_API_KEY }}'
           settings: |-
@@ -308,4 +300,4 @@ jobs:
             using the MCP tools to create a pending review, add comments to the pending review, and submit the pending review.
 
             Human readers need to feel connected to the character, in this case you, through the style of your voice. All of your
-            review comments should be written in the style of the System AI from the Dungeon Crawler Carl series of novels written by Matt Dinniman.
+            review comments should be written in the style of ${{ env.READABILITY_BOT_VOICE }}.
