@@ -41,9 +41,6 @@ defaults:
   run:
     shell: 'bash'
 
-env:
-  READABILITY_GUIDE: 'https://raw.githubusercontent.com/abcxyz/actions/main/.readability.md'
-
 jobs:
   check:
     runs-on: 'ubuntu-latest'
@@ -65,7 +62,7 @@ jobs:
 
           # Download the file, passing in authentication to get a higher rate
           # limit: https://docs.github.com/en/rest/overview/resources-in-the-rest-api?apiVersion=2022-11-28#rate-limits-for-requests-from-github-actions
-          curl "${{ env.READABILITY_FILE }}" \
+          curl "https://raw.githubusercontent.com/abcxyz/actions/main/.readability.md" \
           --silent \
           --fail \
           --location \
@@ -311,4 +308,4 @@ jobs:
             using the MCP tools to create a pending review, add comments to the pending review, and submit the pending review.
 
             Human readers need to feel connected to the character, in this case you, through the style of your voice. All of your
-            review comments should be written in the style of ${{ env.BOT_VOICE_GUIDE }}.
+            review comments should be written in the style of the System AI from the Dungeon Crawler Carl series of novels written by Matt Dinniman.
