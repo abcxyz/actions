@@ -14,16 +14,7 @@
 
 name: 'lint'
 
-# NOTE: This workflow is NOT intended to be a reusable workflow via
-# workflow_call. Instead it will be "reused" by configuring via organization
-# rulesets as a required workflow. As such, this workflow follows the naming
-# convention for other workflow_call-able workflows in the abcxyz/actions
-# respository.
 on:
-  # Note that for org required workflows:
-  # "Any filters you specify for the supported events are ignored
-  # - for example, branches, branches-ignore, paths, types and so on."
-  # https://docs.github.com/en/enterprise-cloud@latest/repositories/configuring-branches-and-merges-in-your-repository/managing-rulesets/available-rules-for-rulesets#supported-event-triggers
   pull_request:
   merge_group:
 
@@ -38,8 +29,7 @@ jobs:
     uses: 'abcxyz/actions/.github/workflows/lint-init.yml@main' # ratchet:exclude
 
   lint:
-    runs-on: |-
-      ${{ vars.LINT_RUNS_ON || 'ubuntu-latest' }}
+    runs-on: 'ubuntu-latest'
     needs:
       - 'init'
     if: |
@@ -51,190 +41,8 @@ jobs:
       max-parallel: 100
       matrix:
         lint_target: '${{ fromJSON(needs.init.outputs.lint_targets) }}'
-    env:
-      ##############
-      ## JAVA ######
-      ##############
-      JAVA_LINT_GOOGLE_JAVA_FORMAT_VERSION: |-
-        ${{ vars.JAVA_LINT_GOOGLE_JAVA_FORMAT_VERSION || '1.25.2' }}
-      JAVA_LINT_DIRECTORY: |-
-        ${{ vars.JAVA_LINT_DIRECTORY || '.' }}
-      ##############
-      ## SHELL #####
-      ##############
-      LINT_SHELL_TARGET: |-
-        ${{ vars.LINT_SHELL_TARGET || '.' }}
-      ##############
-      ## TERRAFORM #
-      ##############
-      TERRAFORM_LINT_TERRAFORM_VERSION: |-
-        ${{ vars.TERRAFORM_LINT_TERRAFORM_VERSION }}
-      TERRAFORM_LINT_TERRAFORM_LINTER_VERSION: |-
-        ${{ vars.TERRAFORM_LINT_TERRAFORM_LINTER_VERSION || '0.2.0' }}
-      TERRAFORM_LINT_DIRECTORY: |-
-        ${{ vars.TERRAFORM_LINT_DIRECTORY || '' }}
-      ##############
-      ## YAML ######
-      ##############
-      # The URL to a yamllint config file. This is only used if no file is found in the local directory.
-      YAML_LINT_YAMLLINT_URL: |-
-        ${{ vars.YAML_LINT_YAMLLINT_URL || 'https://raw.githubusercontent.com/abcxyz/actions/main/.yamllint.yml' }}
-      # Version of yamllint linter to use
-      YAML_LINT_YAMLLINT_VERSION: |-
-        ${{ vars.YAML_LINT_YAMLLINT_VERSION || '1.32.0' }}
-      # File or directory containing YAML files to lint.
-      YAML_LINT_TARGET: |-
-        ${{ vars.YAML_LINT_TARGET || '.' }}
-      ##############
-      ## GITHUB ####
-      ##############
-      # Note, must not start with GITHUB_
-      # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#naming-conventions-for-configuration-variables
-      ACTIONS_LINT_ACTIONLINT_VERSION: |-
-        ${{ vars.ACTIONS_LINT_ACTIONLINT_VERSION || '1.7.7' }}
-      ##############
-      ## DOCKER ####
-      ##############
-      DOCKER_LINT_DIRECTORY: |-
-        ${{ vars.DOCKER_LINT_DIRECTORY || '.' }}
-      DOCKER_LINT_HADOLINT_CONFIG_URL: |-
-        ${{ vars.DOCKER_LINT_HADOLINT_CONFIG_URL || 'https://raw.githubusercontent.com/abcxyz/actions/main/.hadolint.yml' }}
-      DOCKER_LINT_HADOLINT_VERSION: |-
-        ${{ vars.DOCKER_LINT_HADOLINT_VERSION || '2.12.0' }}
-      ##############
-      ## GOLANG ####
-      ##############
-      # The version of Go to install and use.
-      GO_LINT_GO_VERSION: |-
-        ${{ vars.GO_LINT_GO_VERSION }}
-      # Path to the go.mod file to extract a version.
-      GO_LINT_GOLANGCI_URL: |-
-        ${{ vars.GO_LINT_GOLANGCI_URL || 'https://raw.githubusercontent.com/abcxyz/actions/main/default.golangci.yml' }}
-      GO_LINT_GOLANGCI_LINT_VERSION: |-
-        ${{ vars.GO_LINT_GOLANGCI_LINT_VERSION || 'v2.5' }}
-
     steps:
-      - name: 'Checkout'
-        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+      - name: '[${{ matrix.lint_target }}] Lint'
+        uses: 'abcxyz/actions/.github/actions/lint-all@main' # ratchet:exclude
         with:
-          fetch-depth: 1 # shallow clone
-
-      - name: '[JAVA] Lint Java'
-        if: |
-          matrix.lint_target == 'java'
-        uses: 'abcxyz/actions/.github/actions/lint-java@main' # ratchet:exclude
-        with:
-          google_java_format_version: '${{ env.JAVA_LINT_GOOGLE_JAVA_FORMAT_VERSION }}'
-          directory: '${{ env.JAVA_LINT_DIRECTORY }}'
-          github_token: '${{ secrets.GITHUB_TOKEN }}'
-
-      - name: '[JAVASCRIPT] Lint Javascript'
-        if: |
-          matrix.lint_target == 'javascript'
-        run: |-
-          echo "TODO: Lint javascript"
-
-      - name: '[TYPESCRIPT] Lint Typescript'
-        if: |
-          matrix.lint_target == 'typescript'
-        run: |-
-          echo "TODO: Lint typescript"
-
-      - name: '[SHELL] Lint Shell'
-        if: |
-          matrix.lint_target == 'shell'
-        uses: 'abcxyz/actions/.github/actions/lint-shell@main' # ratchet:exclude
-        with:
-          target: '${{ env.LINT_SHELL_TARGET }}'
-
-      - name: '[TERRAFORM] Lint Terraform'
-        if: |
-          matrix.lint_target == 'terraform'
-        uses: 'abcxyz/actions/.github/actions/lint-terraform@main' # ratchet:exclude
-        with:
-          terraform_version: '${{ env.TERRAFORM_LINT_TERRAFORM_VERSION }}'
-          terraform_linter_version: '${{ env.TERRAFORM_LINT_TERRAFORM_LINTER_VERSION }}'
-          directory: '${{ env.TERRAFORM_LINT_DIRECTORY }}'
-
-      - name: '[YAML] lint yaml'
-        if: |
-          matrix.lint_target == 'yaml'
-        uses: 'abcxyz/actions/.github/actions/lint-yaml@main' # ratchet:exclude
-        with:
-          yamllint_url: '${{ env.YAML_LINT_YAMLLINT_URL }}'
-          yamllint_version: '${{ env.YAML_LINT_YAMLLINT_VERSION }}'
-          target: '${{ env.YAML_LINT_TARGET }}'
-
-      - name: '[GITHUB] lint ratchet'
-        if: |
-          matrix.lint_target == 'ratchet'
-        uses: 'sethvargo/ratchet@db1c14407c5a1cac5ff7b956ce3b6fd8cbafd4ef' # ratchet:sethvargo/ratchet@main
-        with:
-          files: './.github/actions/**/*.yml ./.github/workflows/*.yml'
-
-      - name: '[GITHUB] lint actions'
-        if: |
-          matrix.lint_target == 'github'
-        uses: 'abcxyz/actions/.github/actions/lint-github-actions@main' # ratchet:exclude
-        with:
-          actionlint_version: '${{ env.ACTIONS_LINT_ACTIONLINT_VERSION }}'
-
-      - name: '[GITHUB] lint docker'
-        if: |
-          matrix.lint_target == 'docker'
-        uses: 'abcxyz/actions/.github/actions/lint-docker@main' # ratchet:exclude
-        with:
-          target: '${{ env.DOCKER_LINT_DIRECTORY }}'
-          hadolint_config_url: '${{ env.DOCKER_LINT_HADOLINT_CONFIG_URL }}'
-          hadolint_version: '${{ env.DOCKER_LINT_HADOLINT_VERSION }}'
-
-      - name: '[GOLANG] Parse go.mod target'
-        id: 'determine_go_mod'
-        if: |
-          startsWith(matrix.lint_target, 'go|')
-        shell: 'bash'
-        env:
-          LINT_TARGET: '${{ matrix.lint_target }}'
-        run: |
-          GO_MOD_PATH="$(echo "${LINT_TARGET}" | cut -d "|" -f 2)"
-          echo "go_mod_dir=${GO_MOD_PATH}" >> "${GITHUB_OUTPUT}"
-
-      - name: '[GOLANG] Lint Go modules'
-        if: |
-          always() && !cancelled() && startsWith(matrix.lint_target, 'go|')
-        uses: 'abcxyz/actions/.github/actions/lint-go-modules@main' # ratchet:exclude
-        with:
-          go_version: '${{ env.GO_LINT_GO_VERSION }}'
-          go_version_file: '${{ steps.determine_go_mod.outputs.go_mod_dir }}/go.mod'
-          golangci_url: '${{ env.GO_LINT_GOLANGCI_URL }}'
-          directory: '${{ steps.determine_go_mod.outputs.go_mod_dir }}'
-          golangci_lint_version: '${{ env.GO_LINT_GOLANGCI_LINT_VERSION }}'
-
-      - name: '[GOLANG] Lint Go'
-        if: |
-          always() && !cancelled() && startsWith(matrix.lint_target, 'go|')
-        uses: 'abcxyz/actions/.github/actions/lint-go@main' # ratchet:exclude
-        with:
-          go_version: '${{ env.GO_LINT_GO_VERSION }}'
-          go_version_file: '${{ steps.determine_go_mod.outputs.go_mod_dir }}/go.mod'
-          golangci_url: '${{ env.GO_LINT_GOLANGCI_URL }}'
-          directory: '${{ steps.determine_go_mod.outputs.go_mod_dir }}'
-          golangci_lint_version: '${{ env.GO_LINT_GOLANGCI_LINT_VERSION }}'
-
-      - name: '[JAVASCRIPT] Parse go.mod target'
-        id: 'determine_package_json'
-        if: |
-          startsWith(matrix.lint_target, 'js-ts|')
-        shell: 'bash'
-        env:
-          LINT_TARGET: '${{ matrix.lint_target }}'
-        run: |
-          PACKAGE_JSON_PATH="$(echo "${LINT_TARGET}" | cut -d "|" -f 2)"
-          echo "packagejson_dir=${PACKAGE_JSON_PATH}" >> "${GITHUB_OUTPUT}"
-
-      - name: '[JAVASCRIPT] Lint Javascript and Typescript'
-        if: |
-          startsWith(matrix.lint_target, 'js-ts|')
-        uses: 'abcxyz/actions/.github/actions/lint-javascript@main' # ratchet:exclude
-        with:
-          directory: '${{ steps.determine_package_json.outputs.packagejson_dir }}'
+          lint_target: '${{ matrix.lint_target }}'
