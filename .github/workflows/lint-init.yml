@@ -1,0 +1,124 @@
+# Copyright 2023 The Authors (see AUTHORS file)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+# Reusable workflow for determining which lints to run.
+# https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions
+#
+# Exmaple of using this Workflow:
+#
+# name: 'lint'
+#
+# jobs:
+#   init:
+#     uses: abcxyz/actions-internal/.github/workflows/lint-init.yml
+name: 'lint-init'
+
+on:
+  workflow_call:
+    inputs:
+      runs_on:
+        description: 'The GitHub runner on which to execute. This must be a valid JSON but can represent a string, array of strings, or object.'
+        type: 'string'
+        default: '"ubuntu-latest"'
+    outputs:
+      lint_targets:
+        description: 'The unique docker tag of the created image'
+        value: '${{ jobs.init.outputs.lint_targets }}'
+
+concurrency:
+  group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}-init'
+  cancel-in-progress: true
+
+jobs:
+  init:
+    runs-on: ${{ fromJSON(inputs.runs_on) }} # yamllint disable-line
+    outputs:
+      lint_targets: '${{ steps.lint_targets.outputs.lint_targets }}'
+    permissions:
+      contents: 'read'
+    steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+        with:
+          fetch-depth: 1 # shallow checkout
+          ref: '${{ github.event.pull_request.head.sha }}'
+
+      - name: 'Identify Lint Targets'
+        id: 'lint_targets'
+        env:
+          REF: '${{ github.event.pull_request.head.sha }}'
+          LC_ALL: 'C'
+        shell: 'bash'
+        run: |-
+          set -euo pipefail
+          # match_files determines if the current git repository has any files
+          # matching the given pattern. This has been performance tested
+          # against a shallow checkout of chromium (future changes should be
+          # tested in the same manner).
+          match_files() {
+            local filepattern="${1}"
+            matches="$(git ls-tree -r --name-only "${REF}" | grep -m 1 -E "${filepattern}")"
+            code="$?"
+            if [[ -n "${matches}" ]]; then
+              # Ignore exit codes because we found a match.
+              # Exit code 141 and higher may occur because we exit early.
+              return 0
+            fi
+            return "${code}"
+          }
+          find_dirs() {
+            local filepattern="${1}"
+            git ls-tree -r --name-only "${REF}" | grep -E "${filepattern}" | xargs -I {} bash -c 'echo $(dirname {})' | sort || true
+          }
+          to_json() {
+            local filepaths="${1}"
+            echo "${filepaths}" | jq -R -s -c 'split("\n")[:-1]' || true
+          }
+          declare -a TARGETS=()
+          GOMOD_DIRS="$(find_dirs '(go.mod$)' | sed 's/^/go|/' || true)"
+          if [[ -n "${GOMOD_DIRS}" ]]; then
+            while IFS= read -r go_dir; do
+              TARGETS+=("${go_dir}")
+            done < <( echo "${GOMOD_DIRS}")
+          fi
+          PACKAGEJSON_DIRS="$(find_dirs '(package.json$)' | sed 's/^/js-ts|/' || true)"
+          if [[ -n "${PACKAGEJSON_DIRS}" ]]; then
+            while IFS= read -r packagejson_dir; do
+              TARGETS+=("$packagejson_dir")
+            done < <( echo "${PACKAGEJSON_DIRS}")
+          fi
+          if match_files '.*\.(java)$'; then
+            TARGETS+=("java")
+          fi
+          if match_files '.*\.(js)$'; then
+            TARGETS+=("javascript")
+          fi
+          if match_files '.*\.(sh)$'; then
+            TARGETS+=("shell")
+          fi
+          if match_files '.*\.(tf)$'; then
+            TARGETS+=("terraform")
+          fi
+          if match_files '.*\.(yaml|yml)$'; then
+            TARGETS+=("yaml")
+          fi
+          if match_files '.github/(actions|workflows)/.*\.(yaml|yml)$'; then
+            TARGETS+=("github" "ratchet")
+          fi
+          if match_files '.*(\.dockerfile|Dockerfile)$'; then
+            TARGETS+=("docker")
+          fi
+          LINT_TARGETS="$(jq --compact-output --null-input '$ARGS.positional' --args -- "${TARGETS[@]}")"
+          echo "::debug::Found lint targets: ${LINT_TARGETS}"
+          echo "lint_targets=${LINT_TARGETS}" >> "${GITHUB_OUTPUT}"
