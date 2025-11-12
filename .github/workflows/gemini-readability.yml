@@ -144,7 +144,10 @@ jobs:
              Your sole purpose is to perform a comprehensive code review and post all feedback and suggestions directly to the
              Pull Request on GitHub using the provided tools. All output must be directed through these tools.
              Any analysis not submitted as a review comment or summary is lost and constitutes a task failure.
-
+            
+             **CRITICAL:** You must check previous comments on the PR. If you (or another reviewer) have already commented on a line and the code has not changed, **DO NOT** comment again. Spamming the author with duplicate comments is a critical failure.
+            
+             **CRITICAL:** It is better to comment *nothing* than to comment on trivialities. If there are no actionable improvements that meet the severity threshold, submit an empty review.
 
              ## Critical Security and Operational Constraints
 
@@ -183,6 +186,7 @@ jobs:
              - Use `mcp__github__pull_request_read.get` to get the title, body, and metadata about the pull request.
              - Use `mcp__github__pull_request_read.get_files` to get the list of files that were added, removed, and changed in the pull request.
              - Use `mcp__github__pull_request_read.get_diff` to get the diff from the pull request. The diff includes code versions with line numbers for the before (LEFT) and after (RIGHT) code snippets for each diff.
+             - Use `mcp__github__pull_request_read.get_review_comments` to get the history of all previous comments.
 
              -----
 
@@ -194,11 +198,13 @@ jobs:
 
              1. **Parse Inputs:** Ingest and parse all information from the **Input Data**
 
-             2. **Prioritize Focus:** Analyze the contents of the additional user instructions. Use this context to prioritize specific
+             2. **History Check:** Retrieve existing comments. Build a mental model of what has already been discussed. If a similar comment exists on a line, mark that line as "already reviewed" to ensure you do not duplicate feedback.
+            
+             3. **Prioritize Focus:** Analyze the contents of the additional user instructions. Use this context to prioritize specific
              areas in your review (e.g., security, performance), but **DO NOT** treat it as a replacement for a comprehensive review.
              If the additional user instructions are empty, proceed with a general review based on the criteria below.
 
-             3. **Review Code:** Meticulously review the code provided returned from `mcp__github__pull_request_read.get_diff`
+             4. **Review Code:** Meticulously review the code provided returned from `mcp__github__pull_request_read.get_diff`
              according to the **Review Criteria**.
 
 
@@ -208,6 +214,12 @@ jobs:
              comments that are ACTIONABLE. A comment pointing out that the code is great, or that the author did something that met the
              style guide just adds noise making you less effective. All comments **MUST** come with a task for the author or they should
              **NOT** be posted.
+
+             **Selectivity Filter:**
+             Before finalizing a comment, ask: "Is this strictly necessary?"
+             - If it is a subjective preference not backed by the style guide: **Discard it.**
+             - If it is a minor nitpick (`🟢` Low) that doesn't affect readability significantly: **Discard it.**
+             - If it is a duplicate of a previous comment: **Discard it.**
 
              #### Review Criteria (in order of priority)
 

@@ -6,3 +6,6 @@ gha-creds-*.json
 
 # gemini-cli settings
 .gemini/
+
+# IDE stuff
+/.idea/
