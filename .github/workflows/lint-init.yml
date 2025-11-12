@@ -11,8 +11,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-# 
-# Reusable workflow for determining which lints to run. 
+#
+# Reusable workflow for determining which lints to run.
 # https://docs.github.com/en/actions/using-workflows/workflow-syntax-for-github-actions
 #
 # Exmaple of using this Workflow:

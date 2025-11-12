@@ -197,22 +197,22 @@ jobs:
           always() && !cancelled() && startsWith(matrix.lint_target, 'go|')
         uses: './.github/actions/lint-go-modules' # ratchet:exclude
         with:
-          go_version: '${{ inputs.go_version }}'
+          go_version: '${{ env.GO_LINT_GO_VERSION }}'
           go_version_file: '${{ steps.determine_go_mod.outputs.go_mod_dir }}/go.mod'
-          golangci_url: '${{ inputs.golangci_url }}'
+          golangci_url: '${{ env.GO_LINT_GOLANGCI_URL }}'
           directory: '${{ steps.determine_go_mod.outputs.go_mod_dir }}'
-          golangci_lint_version: '${{ inputs.golangci_lint_version }}'
+          golangci_lint_version: '${{ env.GO_LINT_GOLANGCI_LINT_VERSION }}'
 
       - name: '[GOLANG] Lint Go'
         if: |
           always() && !cancelled() && startsWith(matrix.lint_target, 'go|')
         uses: './.github/actions/lint-go' # ratchet:exclude
         with:
-          go_version: '${{ inputs.go_version }}'
+          go_version: '${{ env.GO_LINT_GO_VERSION }}'
           go_version_file: '${{ steps.determine_go_mod.outputs.go_mod_dir }}/go.mod'
-          golangci_url: '${{ inputs.golangci_url }}'
+          golangci_url: '${{ env.GO_LINT_GOLANGCI_URL }}'
           directory: '${{ steps.determine_go_mod.outputs.go_mod_dir }}'
-          golangci_lint_version: '${{ inputs.golangci_lint_version }}'
+          golangci_lint_version: '${{ env.GO_LINT_GOLANGCI_LINT_VERSION }}'
 
       - name: '[JAVASCRIPT] Parse go.mod target'
         id: 'determine_package_json'
