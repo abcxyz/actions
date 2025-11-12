@@ -45,6 +45,8 @@ jobs:
     runs-on: ${{ fromJSON(inputs.runs_on) }} # yamllint disable-line
     outputs:
       lint_targets: '${{ steps.lint_targets.outputs.lint_targets }}'
+    permissions:
+      contents: 'read'
     steps:
       - name: 'Checkout'
         uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
