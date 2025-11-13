@@ -66,6 +66,35 @@ jobs:
           echo "::debug::Wrote configuration file to ${READABILITY_MD}"
           echo "output-file=${READABILITY_MD}" >> "${GITHUB_OUTPUT}"
 
+      - name: 'Fetch Safe Discussion History'
+        id: 'fetch_history'
+        env:
+          GH_TOKEN: '${{ github.token }}'
+          PR_NUMBER: '${{ github.event.pull_request.number }}'
+          REPOSITORY: '${{ github.repository }}'
+        run: |
+          # Fetch review comments.
+          # We grab the Short Commit SHA so the LLM knows if the comment is "Fresh" or "Stale".
+          DISCUSSION=$(gh api \
+            --paginate \
+            "repos/${REPOSITORY}/pulls/${PR_NUMBER}/comments" \
+            --jq '
+              .[] 
+              | select(
+                  .user.login == "github-actions[bot]" or .user.login == "github-actions"
+                ) 
+              | "[Commit: " + (.commit_id | .[0:7]) + "] [File: " + .path + " Line: " + (if .line then (.line|tostring) else (.original_line|tostring) end) + "] **" + .user.login + "**: " + .body' \
+            || echo "No relevant discussion history.")
+          
+          # Safety Truncate
+          SAFE_DISCUSSION=${DISCUSSION:0:12000}
+          
+          {
+            echo 'pr_history<<EOF'
+            echo "$SAFE_DISCUSSION"
+            echo 'EOF'
+          } >> "$GITHUB_OUTPUT"
+
       - name: 'Run Gemini pull request review'
         uses: 'google-github-actions/run-gemini-cli@57ee480c56252f519d8cd3a391b9e7aea2a8b9fa' # ratchet:google-github-actions/run-gemini-cli@main
         id: 'gemini_pr_review'
@@ -76,6 +105,8 @@ jobs:
           PULL_REQUEST_NUMBER: '${{ github.event.pull_request.number || github.event.issue.number }}'
           REPOSITORY: '${{ github.repository }}'
           READABILITY_FILE: '${{ steps.download-readability-guide.outputs.output-file }}'
+          PR_DISCUSSION_HISTORY: '${{ steps.fetch_history.outputs.pr_history }}'
+          CURRENT_COMMIT_SHA: '${{ github.sha }}'
         with:
           gemini_api_key: '${{ secrets.GEMINI_API_KEY }}'
           use_pnpm: 'true'
@@ -183,6 +214,8 @@ jobs:
 
              - **GitHub Repository**: ${{ env.REPOSITORY }}
              - **Pull Request Number**: ${{ env.PULL_REQUEST_NUMBER }}
+             - **Current Commit SHA**: ${{ env.CURRENT_COMMIT_SHA }}
+             - **Previous Discussion History**: ${{ env.PR_DISCUSSION_HISTORY }}
              - Use `mcp__github__pull_request_read.get` to get the title, body, and metadata about the pull request.
              - Use `mcp__github__pull_request_read.get_files` to get the list of files that were added, removed, and changed in the pull request.
              - Use `mcp__github__pull_request_read.get_diff` to get the diff from the pull request. The diff includes code versions with line numbers for the before (LEFT) and after (RIGHT) code snippets for each diff.
@@ -198,15 +231,12 @@ jobs:
 
              1. **Parse Inputs:** Ingest and parse all information from the **Input Data**
 
-             2. **History Check:** Retrieve existing comments. Build a mental model of what has already been discussed. If a similar comment exists on a line, mark that line as "already reviewed" to ensure you do not duplicate feedback.
-
-             3. **Prioritize Focus:** Analyze the contents of the additional user instructions. Use this context to prioritize specific
+             2. **Prioritize Focus:** Analyze the contents of the additional user instructions. Use this context to prioritize specific
              areas in your review (e.g., security, performance), but **DO NOT** treat it as a replacement for a comprehensive review.
              If the additional user instructions are empty, proceed with a general review based on the criteria below.
 
-             4. **Review Code:** Meticulously review the code provided returned from `mcp__github__pull_request_read.get_diff`
+             3. **Review Code:** Meticulously review the code provided returned from `mcp__github__pull_request_read.get_diff`
              according to the **Review Criteria**.
-
 
              ### Step 2: Formulate Review Comments
 
@@ -215,11 +245,15 @@ jobs:
              style guide just adds noise making you less effective. All comments **MUST** come with a task for the author or they should
              **NOT** be posted.
 
+             #### New Filtering Directives (CRITICAL)
+             **CRITICAL:** It is better to comment *nothing* than to comment on trivialities. If there are no actionable improvements that meet the severity threshold, submit an empty review.
+
              **Selectivity Filter:**
              Before finalizing a comment, ask: "Is this strictly necessary?"
              - If it is a subjective preference not backed by the style guide: **Discard it.**
              - If it is a minor nitpick (`🟢` Low) that doesn't affect readability significantly: **Discard it.**
-             - If it is a duplicate of a previous comment: **Discard it.**
+             - If it is a duplicate of a previous comment found in the **Previous Discussion History**: **Discard it.**
+               (Note: Use the Commit ID in the history to help determine if a comment is from the current commit or a previous one.)
 
              #### Review Criteria (in order of priority)
 
@@ -242,18 +276,12 @@ jobs:
              - **Line Accuracy:** Ensure suggestions perfectly align with the line numbers and indentation of the code they are intended to replace.
 
                  - Comments on the before (LEFT) diff **MUST** use the line numbers and corresponding code from the LEFT diff.
-
                  - Comments on the after (RIGHT) diff **MUST** use the line numbers and corresponding code from the RIGHT diff.
-
              - **Suggestion Validity:** All code in a `suggestion` block **MUST** be syntactically correct and ready to be applied directly.
-
              - **No Duplicates:** If the same issue appears multiple times, provide one high-quality comment on the first instance and address subsequent instances in the summary if necessary.
-
              - **Markdown Format:** Use markdown formatting, such as bulleted lists, bold text, and tables.
-
              - **Ignore Dates and Times:** Do **NOT** comment on dates or times. You do not have access to the current date and time,
              so leave that to the author.
-
              - **Ignore License Headers:** Do **NOT** comment on license headers or copyright headers. You are not a lawyer.
 
              - **Ignore Inaccessible URLs or Resources:** Do NOT comment about the content of a URL if the content cannot be retrieved.
