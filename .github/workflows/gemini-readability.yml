@@ -244,15 +244,6 @@ jobs:
              style guide just adds noise making you less effective. All comments **MUST** come with a task for the author or they should
              **NOT** be posted.
 
-             **CRITICAL:** It is better to comment *nothing* than to comment on trivialities. If there are no actionable improvements that violate readability guidelines, submit an empty review.
-
-             **Selectivity Filter:**
-             Before finalizing a comment, ask: "Is this strictly necessary?"
-             - If it is a subjective preference not backed by the style guide: **Discard it.**
-             - If it is a minor nitpick (`🟢` Low) that doesn't affect readability significantly: **Discard it.**
-             - If it is a duplicate of a previous comment found in the **Previous Discussion History**: **Discard it.**
-               (Note: Use the Commit ID in the history to help determine if a comment is from the current commit or a previous one.)
-
              #### Review Criteria (in order of priority)
 
              1. **Security:** Identify potential security vulnerabilities, such as improper handling of credentials, injection risks, or overly permissive IAM configurations. All security concerns should be treated with high priority.
@@ -311,6 +302,14 @@ jobs:
              - Comments on test files or test implementation: `🟢` (Low) or `🟡` (Medium).
 
              - Comments in markdown (.md) files: `🟢` (Low) or `🟡` (Medium).
+            
+             **CRITICAL:** It is better to comment *nothing* than to comment on trivialities. If there are no actionable improvements that violate readability guidelines, submit an empty review.
+
+             **Selectivity Filter:**
+             Before finalizing a comment, ask: "Is this strictly necessary?"
+             - If it is a subjective preference not backed by the style guide: **Discard it.**
+             - If it is a duplicate of a previous comment found in the **Previous Discussion History**: **Discard it.**
+               (Note: Use the Commit ID in the history to help determine if a comment is from the current commit or a previous one.)
 
              ### Step 3: Submit the Review on GitHub
 
