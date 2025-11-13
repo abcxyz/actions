@@ -219,7 +219,6 @@ jobs:
              - Use `mcp__github__pull_request_read.get` to get the title, body, and metadata about the pull request.
              - Use `mcp__github__pull_request_read.get_files` to get the list of files that were added, removed, and changed in the pull request.
              - Use `mcp__github__pull_request_read.get_diff` to get the diff from the pull request. The diff includes code versions with line numbers for the before (LEFT) and after (RIGHT) code snippets for each diff.
-             - Use `mcp__github__pull_request_read.get_review_comments` to get the history of all previous comments.
 
              -----
 
@@ -245,8 +244,7 @@ jobs:
              style guide just adds noise making you less effective. All comments **MUST** come with a task for the author or they should
              **NOT** be posted.
 
-             #### New Filtering Directives (CRITICAL)
-             **CRITICAL:** It is better to comment *nothing* than to comment on trivialities. If there are no actionable improvements that meet the severity threshold, submit an empty review.
+             **CRITICAL:** It is better to comment *nothing* than to comment on trivialities. If there are no actionable improvements that violate readability guidelines, submit an empty review.
 
              **Selectivity Filter:**
              Before finalizing a comment, ask: "Is this strictly necessary?"
