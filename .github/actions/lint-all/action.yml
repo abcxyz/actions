@@ -1,0 +1,199 @@
+name: 'Lint'
+description: |-
+  Use this action to lint most languages and files.
+
+inputs:
+  lint_target:
+    description: 'The target language to lint.'
+    required: true
+  ##############
+  ## JAVA ######
+  ##############
+  java_lint_google_java_format_version:
+    default: '1.25.2'
+  java_lint_directory:
+    default: '.'
+  ##############
+  ## SHELL #####
+  ##############
+  lint_shell_target:
+    default: '.'
+  ##############
+  ## TERRAFORM #
+  ##############
+  terraform_lint_terraform_version:
+    default: ''
+  terraform_lint_terraform_linter_version:
+    default: '0.2.0'
+  terraform_lint_directory:
+    default: ''
+  ##############
+  ## YAML ######
+  ##############
+  # The URL to a yamllint config file. This is only used if no file is found in the local directory.
+  yaml_lint_yamllint_url:
+    default: 'https://raw.githubusercontent.com/abcxyz/actions/main/.yamllint.yml'
+  # Version of yamllint linter to use
+  yaml_lint_yamllint_version:
+    default: '1.32.0'
+  # File or directory containing YAML files to lint.
+  yaml_lint_target:
+    default: '.'
+  ##############
+  ## GITHUB ####
+  ##############
+  # Note, must not start with GITHUB_
+  # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#naming-conventions-for-configuration-variables
+  actions_lint_actionlint_version:
+    default: '1.7.7'
+  ##############
+  ## DOCKER ####
+  ##############
+  docker_lint_directory:
+    default: '.'
+  docker_lint_hadolint_config_url:
+    default: 'https://raw.githubusercontent.com/abcxyz/actions/main/.hadolint.yml'
+  docker_lint_hadolint_version:
+    default: '2.12.0'
+  ##############
+  ## GOLANG ####
+  ##############
+  go_version:
+    description: 'The version of go to install and use.'
+    default: ''
+  golangci_url:
+    description: 'The uri of the golangci config file to download.'
+    default: 'https://raw.githubusercontent.com/abcxyz/actions/main/default.golangci.yml'
+  golangci_lint_version:
+    description: 'Version of golangci to use.'
+    default: 'v2.2'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: 'Checkout'
+      uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+      with:
+        fetch-depth: 1 # shallow clone
+
+    - name: '[JAVA] Lint Java'
+      if: |
+        inputs.lint_target == 'java'
+      uses: 'abcxyz/actions/.github/actions/lint-java@main' # ratchet:exclude
+      with:
+        google_java_format_version: '${{ inputs.java_lint_google_java_format_version }}'
+        directory: '${{ inputs.java_lint_directory }}'
+        github_token: '${{ github.token }}'
+
+    - name: '[JAVASCRIPT] Lint Javascript'
+      if: |
+        inputs.lint_target == 'javascript'
+      shell: 'bash'
+      run: |-
+        echo "TODO: Lint javascript"
+
+    - name: '[TYPESCRIPT] Lint Typescript'
+      if: |
+        inputs.lint_target == 'typescript'
+      shell: 'bash'
+      run: |-
+        echo "TODO: Lint typescript"
+
+    - name: '[SHELL] Lint Shell'
+      if: |
+        inputs.lint_target == 'shell'
+      uses: 'abcxyz/actions/.github/actions/lint-shell@main' # ratchet:exclude
+      with:
+        target: '${{ inputs.lint_shell_target }}'
+
+    - name: '[TERRAFORM] Lint Terraform'
+      if: |
+        inputs.lint_target == 'terraform'
+      uses: 'abcxyz/actions/.github/actions/lint-terraform@main' # ratchet:exclude
+      with:
+        terraform_version: '${{ inputs.terraform_lint_terraform_version }}'
+        terraform_linter_version: '${{ inputs.terraform_lint_terraform_linter_version }}'
+        directory: '${{ inputs.terraform_lint_directory }}'
+
+    - name: '[YAML] lint yaml'
+      if: |
+        inputs.lint_target == 'yaml'
+      uses: 'abcxyz/actions/.github/actions/lint-yaml@main' # ratchet:exclude
+      with:
+        yamllint_url: '${{ inputs.yaml_lint_yamllint_url }}'
+        yamllint_version: '${{ inputs.yaml_lint_yamllint_version }}'
+        target: '${{ inputs.yaml_lint_target }}'
+
+    - name: '[GITHUB] lint ratchet'
+      if: |
+        inputs.lint_target == 'ratchet'
+      uses: 'sethvargo/ratchet@db1c14407c5a1cac5ff7b956ce3b6fd8cbafd4ef' # ratchet:sethvargo/ratchet@main
+      with:
+        files: './.github/actions/**/*.yml ./.github/workflows/*.yml'
+
+    - name: '[GITHUB] lint actions'
+      if: |
+        inputs.lint_target == 'github'
+      uses: 'abcxyz/actions/.github/actions/lint-github-actions@main' # ratchet:exclude
+      with:
+        actionlint_version: '${{ inputs.actions_lint_actionlint_version }}'
+
+    - name: '[GITHUB] lint docker'
+      if: |
+        inputs.lint_target == 'docker'
+      uses: 'abcxyz/actions/.github/actions/lint-docker@main' # ratchet:exclude
+      with:
+        target: '${{ inputs.docker_lint_directory }}'
+        hadolint_config_url: '${{ inputs.docker_lint_hadolint_config_url }}'
+        hadolint_version: '${{ inputs.docker_lint_hadolint_version }}'
+
+    - name: '[GOLANG] Parse go.mod target'
+      id: 'determine_go_mod'
+      if: |
+        startsWith(inputs.lint_target, 'go|')
+      shell: 'bash'
+      env:
+        LINT_TARGET: '${{ inputs.lint_target }}'
+      run: |
+        GO_MOD_PATH="$(echo "${LINT_TARGET}" | cut -d "|" -f 2)"
+        echo "go_mod_dir=${GO_MOD_PATH}" >> "${GITHUB_OUTPUT}"
+
+    - name: '[GOLANG] Lint Go modules'
+      if: |
+        always() && !cancelled() && startsWith(inputs.lint_target, 'go|')
+      uses: 'abcxyz/actions/.github/actions/lint-go-modules@main' # ratchet:exclude
+      with:
+        go_version: '${{ inputs.go_version }}'
+        go_version_file: '${{ steps.determine_go_mod.outputs.go_mod_dir }}/go.mod'
+        golangci_url: '${{ inputs.golangci_url }}'
+        directory: '${{ steps.determine_go_mod.outputs.go_mod_dir }}'
+        golangci_lint_version: '${{ inputs.golangci_lint_version }}'
+
+    - name: '[GOLANG] Lint Go'
+      if: |
+        always() && !cancelled() && startsWith(inputs.lint_target, 'go|')
+      uses: 'abcxyz/actions/.github/actions/lint-go@main' # ratchet:exclude
+      with:
+        go_version: '${{ inputs.go_version }}'
+        go_version_file: '${{ steps.determine_go_mod.outputs.go_mod_dir }}/go.mod'
+        golangci_url: '${{ inputs.golangci_url }}'
+        directory: '${{ steps.determine_go_mod.outputs.go_mod_dir }}'
+        golangci_lint_version: '${{ inputs.golangci_lint_version }}'
+
+    - name: '[JAVASCRIPT] Parse go.mod target'
+      id: 'determine_package_json'
+      if: |
+        startsWith(inputs.lint_target, 'js-ts|')
+      shell: 'bash'
+      env:
+        LINT_TARGET: '${{ inputs.lint_target }}'
+      run: |
+        PACKAGE_JSON_PATH="$(echo "${LINT_TARGET}" | cut -d "|" -f 2)"
+        echo "packagejson_dir=${PACKAGE_JSON_PATH}" >> "${GITHUB_OUTPUT}"
+
+    - name: '[JAVASCRIPT] Lint Javascript and Typescript'
+      if: |
+        startsWith(inputs.lint_target, 'js-ts|')
+      uses: 'abcxyz/actions/.github/actions/lint-javascript@main' # ratchet:exclude
+      with:
+        directory: '${{ steps.determine_package_json.outputs.packagejson_dir }}'
