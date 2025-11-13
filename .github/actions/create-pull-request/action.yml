@@ -205,6 +205,9 @@ runs:
             });
             core.info(`Created new pull request reference: ${JSON.stringify(newRef)}`)
 
+            const newRefString = JSON.stringify(newRef);
+            core.info(`Created new pull request reference: ${newRefString}`);
+
             return newRef.object.sha;
           } catch (err) {
             core.setFailed(
