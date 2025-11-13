@@ -203,6 +203,7 @@ runs:
               ref: pullRequestFullRef,
               sha: context.sha,
             });
+            core.info(`Created new pull request reference: ${JSON.stringify(newRef)}`)
 
             return newRef.object.sha;
           } catch (err) {
