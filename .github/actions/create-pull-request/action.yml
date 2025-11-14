@@ -352,7 +352,7 @@ runs:
               owner: ${owner}
               repo:  ${repo}
               ref:   ${pullRequestPartialRef}
-              sha:   ${commit.sha}
+              sha:   ${parentSHA}
             `);
 
             // update the pr branch reference with the new git tree
@@ -360,7 +360,7 @@ runs:
               owner: owner,
               repo: repo,
               ref: pullRequestPartialRef,
-              sha: commit.sha,
+              sha: parentSHA,
               force: true
             });
           } catch (err) {
