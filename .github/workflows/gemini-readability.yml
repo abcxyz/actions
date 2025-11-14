@@ -75,6 +75,7 @@ jobs:
         run: |
           # Fetch review comments.
           # We grab the Short Commit SHA so the LLM knows if the comment is "Fresh" or "Stale".
+          # Format: `[Commit: ${short-hash}] [File: ${path} Line: ${line#}] **github-actions[bot]**: ${comment-contents}`
           DISCUSSION=$(gh api \
             --paginate \
             "repos/${REPOSITORY}/pulls/${PR_NUMBER}/comments" \
@@ -215,7 +216,9 @@ jobs:
              - **GitHub Repository**: ${{ env.REPOSITORY }}
              - **Pull Request Number**: ${{ env.PULL_REQUEST_NUMBER }}
              - **Current Commit SHA**: ${{ env.CURRENT_COMMIT_SHA }}
-             - **Previous Discussion History**: ${{ env.PR_DISCUSSION_HISTORY }}
+             - **Previous Discussion History**:
+               FORMAT: `[Commit: ${short-hash}] [File: ${path} Line: ${line#}] **github-actions[bot]**: ${comment-contents}`
+               ${{ env.PR_DISCUSSION_HISTORY }}
              - Use `mcp__github__pull_request_read.get` to get the title, body, and metadata about the pull request.
              - Use `mcp__github__pull_request_read.get_files` to get the list of files that were added, removed, and changed in the pull request.
              - Use `mcp__github__pull_request_read.get_diff` to get the diff from the pull request. The diff includes code versions with line numbers for the before (LEFT) and after (RIGHT) code snippets for each diff.
