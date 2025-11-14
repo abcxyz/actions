@@ -95,7 +95,7 @@ runs:
         result-encoding: 'string'
         retries: '${{ inputs.max_retries }}'
         script: |-
-          const pullRequestPartialRef = `heads/${process.env.BASE_BRANCH}`;
+          const baseBranchPartialRef = `heads/${process.env.BASE_BRANCH}`;
           const [input_owner, input_repo] = `${process.env.REPOSITORY}`.split("/");
           const [owner, repo] = input_owner && input_repo
             ? [input_owner, input_repo]
@@ -105,13 +105,13 @@ runs:
             core.info(`Get base branch reference:
               owner: ${owner}
               repo:  ${repo}
-              ref:   ${pullRequestPartialRef}
+              ref:   ${baseBranchPartialRef}
             `);
 
             const { data: existingRef } = await github.rest.git.getRef({
               owner: owner,
               repo: repo,
-              ref: pullRequestPartialRef,
+              ref: baseBranchPartialRef,
             });
 
             return existingRef.object.sha;
@@ -131,40 +131,19 @@ runs:
         BASE_BRANCH: '${{ inputs.base_branch }}'
         PR_TITLE: '${{ inputs.title }}'
         PR_BODY: '${{ inputs.body }}'
+        BASE_BRANCH_SHA: '${{ steps.base-branch-ref.outputs.result }}'
       with:
         github-token: '${{ inputs.token }}'
         result-encoding: 'string'
         retries: '${{ inputs.max_retries }}'
         script: |-
+          const baseBranchSHA = process.env.BASE_BRANCH_SHA;
           const pullRequestPartialRef = `heads/${process.env.HEAD_BRANCH}`;
           const pullRequestFullRef = `refs/${pullRequestPartialRef}`;
           const [input_owner, input_repo] = `${process.env.REPOSITORY}`.split("/");
           const [owner, repo] = input_owner && input_repo
             ? [input_owner, input_repo]
             : [context.repo.owner, context.repo.repo];
-
-          try {
-            core.info(`Get refer request reference:
-              owner: ${owner}
-              repo:  ${repo}
-              ref:   ${pullRequestPartialRef}
-            `);
-
-            const { data: existingRef } = await github.rest.git.getRef({
-              owner: owner,
-              repo: repo,
-              ref: pullRequestPartialRef,
-            });
-
-            return existingRef.object.sha;
-          } catch (err) {
-            if (err.status !== 404) {
-              core.setFailed(`Failed to get existing pull request reference: ${err}`);
-              core.error(err);
-              process.exit(1);
-            }
-            core.info("Existing pull request reference not found");
-          }
 
           try {
             core.info(`Checking for existing pull request reference:
@@ -194,14 +173,14 @@ runs:
               owner: ${owner}
               repo:  ${repo}
               ref:   ${pullRequestFullRef}
-              sha:   ${context.sha}
+              sha:   ${baseBranchSHA}
             `);
 
             const { data: newRef } = await github.rest.git.createRef({
               owner: owner,
               repo: repo,
               ref: pullRequestFullRef,
-              sha: context.sha,
+              sha: baseBranchSHA,
             });
             core.info(`Created new pull request reference: ${JSON.stringify(newRef)}`)
 
