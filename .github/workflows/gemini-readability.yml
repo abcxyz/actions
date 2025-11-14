@@ -79,16 +79,16 @@ jobs:
             --paginate \
             "repos/${REPOSITORY}/pulls/${PR_NUMBER}/comments" \
             --jq '
-              .[] 
+              .[]
               | select(
                   .user.login == "github-actions[bot]" or .user.login == "github-actions"
-                ) 
+                )
               | "[Commit: " + (.commit_id | .[0:7]) + "] [File: " + .path + " Line: " + (if .line then (.line|tostring) else (.original_line|tostring) end) + "] **" + .user.login + "**: " + .body' \
             || echo "No relevant discussion history.")
-          
+
           # Safety Truncate
           SAFE_DISCUSSION=${DISCUSSION:0:12000}
-          
+
           {
             echo 'pr_history<<EOF'
             echo "$SAFE_DISCUSSION"
@@ -302,7 +302,7 @@ jobs:
              - Comments on test files or test implementation: `🟢` (Low) or `🟡` (Medium).
 
              - Comments in markdown (.md) files: `🟢` (Low) or `🟡` (Medium).
-            
+
              **CRITICAL:** It is better to comment *nothing* than to comment on trivialities. If there are no actionable improvements that violate readability guidelines, submit an empty review.
 
              **Selectivity Filter:**
