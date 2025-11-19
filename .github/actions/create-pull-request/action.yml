@@ -317,14 +317,14 @@ runs:
             core.info(`Creating new tree:
               owner:     ${owner}
               repo:      ${repo}
-              base_tree: ${context.sha}
+              base_tree: ${parentSHA}
             `);
 
             // create new git tree from the pr branch
             const { data: tree } = await github.rest.git.createTree({
               owner: owner,
               repo: repo,
-              base_tree: context.sha,
+              base_tree: parentSHA,
               tree: prCommitTree,
             });
 
