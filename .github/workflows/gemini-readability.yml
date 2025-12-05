@@ -37,17 +37,49 @@ env:
     ${{ vars.READABILITY_BOT_READABILITY_GUIDE || 'https://raw.githubusercontent.com/abcxyz/actions/main/.readability.md' }}
   READABILITY_BOT_VOICE: |-
     ${{ vars.READABILITY_BOT_VOICE_GUIDE || 'the System AI from the Dungeon Crawler Carl series of novels written by Matt Dinniman' }}
+  TAGREP_VERSION: '0.0.7'
 
 jobs:
   check:
     runs-on: 'ubuntu-latest'
     if: |
-      github.repository != 'abcxyz/actions' && github.event_name == 'pull_request'
+      github.repository != 'abcxyz/actions' && github.event_name == 'pull_request' && github.event.pull_request.draft == false
     steps:
       - name: 'Checkout repository'
         uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
         with:
           fetch-depth: 1 # shallow clone
+
+      - name: 'Setup Tagrep'
+        uses: 'abcxyz/actions/.github/actions/setup-binary@4354d52e96a232b28734c3a0cc39266ecc3d52e8' # ratchet:abcxyz/actions/.github/actions/setup-binary@main
+        with:
+          download_url: 'https://github.com/abcxyz/tagrep/releases/download/v${{ env.TAGREP_VERSION }}/tagrep_${{ env.TAGREP_VERSION }}_linux_amd64.tar.gz'
+          install_path: '${{ runner.temp }}/.tagrep'
+          binary_subpath: 'tagrep'
+          cache_key: '${{ runner.os }}_${{ runner.arch }}_tagrep_${{ env.TAGREP_VERSION }}'
+          add_to_path: true
+
+      - name: 'Tagrep PR vars'
+        id: 'tagrep'
+        shell: 'bash'
+        env:
+          GITHUB_TOKEN: '${{ secrets.GITHUB_TOKEN }}'
+          TAGREP_LOG_TARGET: 'STDERR'
+        run: |
+          tags="$(tagrep parse -type=request -format=raw -bool-tags=DISABLE_READABILITY 2> tagrep.log)"
+          cat tagrep.log
+          echo "tags -> ${tags}"
+          echo "${tags}" >> "${GITHUB_ENV}"
+
+      - name: 'Check tag'
+        env:
+          DISABLE_READABILITY: '${{ env.DISABLE_READABILITY }}'
+        shell: 'bash'
+        run: |
+          if [[ "${DISABLE_READABILITY}" == "true" ]]; then
+            echo "Skipping readability check because DISABLE_READABILITY=true was set in the PR description."
+            exit 0
+          fi
 
       - name: 'Download readability guide'
         id: 'download-readability-guide'
