@@ -71,18 +71,10 @@ jobs:
           echo "tags -> ${tags}"
           echo "${tags}" >> "${GITHUB_ENV}"
 
-      - name: 'Check tag'
-        env:
-          DISABLE_READABILITY: '${{ env.DISABLE_READABILITY }}'
-        shell: 'bash'
-        run: |
-          if [[ "${DISABLE_READABILITY}" == "true" ]]; then
-            echo "Skipping readability check because DISABLE_READABILITY=true was set in the PR description."
-            exit 0
-          fi
-
       - name: 'Download readability guide'
         id: 'download-readability-guide'
+        if: |
+          env.DISABLE_READABILITY != 'true'
         run: |-
           # Create a unique output file outside of the checkout.
           READABILITY_MD="${RUNNER_TEMP}/${GITHUB_SHA:0:7}.readability.md"
@@ -102,6 +94,8 @@ jobs:
 
       - name: 'Fetch Safe Discussion History'
         id: 'fetch_history'
+        if: |
+          env.DISABLE_READABILITY != 'true'
         env:
           GH_TOKEN: '${{ github.token }}'
           PR_NUMBER: '${{ github.event.pull_request.number }}'
@@ -133,6 +127,8 @@ jobs:
       - name: 'Run Gemini pull request review'
         uses: 'google-github-actions/run-gemini-cli@57ee480c56252f519d8cd3a391b9e7aea2a8b9fa' # ratchet:google-github-actions/run-gemini-cli@main
         id: 'gemini_pr_review'
+        if: |
+          env.DISABLE_READABILITY != 'true'
         env:
           GITHUB_TOKEN: '${{ github.token }}'
           ISSUE_TITLE: '${{ github.event.pull_request.title || github.event.issue.title }}'
