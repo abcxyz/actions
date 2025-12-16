@@ -65,6 +65,8 @@ runs:
           const reviewStateByLogin = {};
           submittedReviews
             .filter((r) => r.user.login !== context.payload.pull_request.user.login)
+            // Gemini code assist cannot approve PRs, but it will leave comments
+            .filter((r) => r.user.login !== "gemini-code-assist[bot]")
             .sort((a, b) => new Date(a.submitted_at) - new Date(b.submitted_at))
             .forEach((r) => {
               // add value if it doesnt not exist
