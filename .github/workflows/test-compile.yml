@@ -11,5 +11,6 @@ jobs:
         shell: 'bash'
         run: |
           sudo dpkg --add-architecture i386
+          sudo apt-get update
           sudo apt install cargo build-essential libudev-dev openssl libssl-dev linux-tools-common gcc-multilib libssl-dev:i386 \
             && cargo install probe-rs-tools
