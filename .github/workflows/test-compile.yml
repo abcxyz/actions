@@ -1,0 +1,13 @@
+name: 'test-compile'
+
+on:
+  pull_request:
+
+jobs:
+  compile:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'test compile rust'
+        shell: 'bash'
+        run: |
+          sudo apt install cargo && cargo install probe-rs-tools
