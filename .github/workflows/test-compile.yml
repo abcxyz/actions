@@ -10,4 +10,5 @@ jobs:
       - name: 'test compile rust'
         shell: 'bash'
         run: |
-          sudo apt install cargo && cargo install probe-rs-tools
+          sudo apt install cargo cc libudev openssl linux-tools-common gcc-multilib libssl-dev:i386 \
+            && cargo install probe-rs-tools
