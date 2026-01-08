@@ -14,8 +14,8 @@ jobs:
           sudo dpkg --add-architecture i386
           sudo apt-get update
           sudo apt install cargo build-essential libudev-dev openssl libssl-dev linux-tools-common gcc-multilib libssl-dev:i386 \
-            && cargo install probe-rs-tools --timings 2>&1 | tee output.txt
-          timings_file="$(cat output.txt | grep 'Timing report saved to ' | awk '{print $NF}')"
+            && sudo cargo install probe-rs-tools --timings 2>&1 | tee output.txt
+          timings_file="$(sudo cat output.txt | grep 'Timing report saved to ' | awk '{print $NF}')"
           sudo cat "${timings_file}"
           
           
