@@ -7,6 +7,23 @@ jobs:
   compile:
     runs-on: 'ubuntu-latest'
     steps:
+
+      - name: Check CPU usage before build
+        run: |
+          echo "CPU info:"
+          nproc
+          echo "Load average:"
+          uptime
+        shell: bash
+
+      - name: Check CPU usage before build
+        run: |
+          echo "CPU info:"
+          nproc
+          echo "Load average:"
+          uptime
+        shell: bash
+
       - name: 'test compile rust'
         shell: 'bash'
         env:
@@ -20,4 +37,10 @@ jobs:
           timings_file="$(cat output.txt | grep 'Timing report saved to ' | awk '{print $NF}')"
           cat "${timings_file}"
           
-          
+      - name: Check CPU usage before build
+        run: |
+          echo "CPU info:"
+          nproc
+          echo "Load average:"
+          uptime
+        shell: bash
