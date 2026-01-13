@@ -27,7 +27,7 @@ jobs:
       matrix:
         include:
           # checksums generated from sha512sum
-          - os: 'ubuntu-latest'
+          - os: 'self-hosted'
             name: 'linux'
             ext: 'tar.gz'
             checksum: '952a9b7bb8b044f5229207f173dfc2e25134781e0470bc7fcfb1eae914bebfc84ac25287f0fa2fb696c7c19526fe02e70c86434adb8d5a969c78912b5ad155b3'

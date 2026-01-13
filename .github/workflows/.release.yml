@@ -28,7 +28,7 @@ jobs:
   create-release:
     if: |-
       ${{ startsWith(github.event.head_commit.message, 'Release: v') }}
-    runs-on: 'ubuntu-latest'
+    runs-on: 'self-hosted'
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -70,7 +70,7 @@ jobs:
           expected_email: '${{ vars.TOKEN_MINTER_GITHUB_EMAIL }}'
 
   publish-release:
-    runs-on: 'ubuntu-latest'
+    runs-on: 'self-hosted'
     permissions:
       contents: 'read'
       id-token: 'write'
@@ -115,7 +115,7 @@ jobs:
   cleanup-failed-release:
     if: |-
       ${{ always() && needs.create-release.outputs.created == 'true' && contains(fromJSON('["failure", "cancelled", "skipped"]'), needs.publish-release.result) }}
-    runs-on: 'ubuntu-latest'
+    runs-on: 'self-hosted'
     needs:
       - 'create-release'
       - 'publish-release'

@@ -38,7 +38,7 @@ jobs:
   multi-approvers:
     if: |-
       contains(fromJSON('["pull_request", "pull_request_review"]'), github.event_name)
-    runs-on: 'ubuntu-latest'
+    runs-on: 'self-hosted'
     steps:
       - name: 'Download members.json'
         id: 'download-members-json'

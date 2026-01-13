@@ -20,7 +20,7 @@
 #     needs:
 #       - 'maybe-create-ci-image'
 #     runs-on:
-#       labels: ['ubuntu-latest']
+#       labels: ['self-hosted']
 #     container:
 #       image: 'ghcr.io/${{ github.repository }}/ci-build:${{ needs.maybe-create-ci-image.outputs.docker_tag }}'
 #       credentials:
@@ -36,7 +36,7 @@ on:
       runs_on:
         description: 'The GitHub runner on which to execute. This must be a valid JSON but can represent a string, array of strings, or object.'
         type: 'string'
-        default: '"ubuntu-latest"'
+        default: '"self-hosted"'
       dockerfile:
         required: true
         type: 'string'

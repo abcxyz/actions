@@ -20,7 +20,7 @@ on:
       runs-on:
         description: 'The GitHub runner on which to execute. This must be a valid JSON but can represent a string, array of strings, or object.'
         type: 'string'
-        default: '"ubuntu-latest"'
+        default: '"self-hosted"'
       yamllint_url:
         description: 'The URL to a yamllint config file. This is only used if no file is found in the local directory.'
         type: 'string'

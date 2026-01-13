@@ -51,7 +51,7 @@ on:
       runs-on:
         description: 'The GitHub runner on which to execute. This must be a valid JSON but can represent a string, array of strings, or object.'
         type: 'string'
-        default: '"ubuntu-latest"'
+        default: '"self-hosted"'
       branch:
         description: 'Which branch to scan.'
         required: false

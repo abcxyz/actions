@@ -53,7 +53,7 @@ on:
           The GitHub runner on which to execute. This must be a valid JSON but
           can represent a string, array of strings, or object.
         type: 'string'
-        default: '"ubuntu-latest"'
+        default: '"self-hosted"'
       tag:
         description: |-
           The name of the tag to be created.

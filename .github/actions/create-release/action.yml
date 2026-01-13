@@ -21,7 +21,7 @@
 #
 #     jobs:
 #       release:
-#         runs-on: 'ubuntu-latest'
+#         runs-on: 'self-hosted'
 #
 #         # The following line is super super super important! This ensures the
 #         # job only runs when the commit matches the expected message. There

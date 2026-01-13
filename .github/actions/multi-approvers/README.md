@@ -65,7 +65,7 @@ concurrency:
 
 jobs:
   multi-approvers:
-    runs-on: 'ubuntu-latest'
+    runs-on: 'self-hosted'
     steps:
       - name: 'Authenticate to Google Cloud'
         id: 'minty-auth'
@@ -136,7 +136,7 @@ concurrency:
 
 jobs:
   multi-approvers:
-    runs-on: 'ubuntu-latest'
+    runs-on: 'self-hosted'
     steps:
       - name: 'Multi-approvers'
         uses: 'abcxyz/actions/.github/actions/multi-approvers'

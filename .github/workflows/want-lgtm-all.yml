@@ -30,7 +30,7 @@ jobs:
     # TODO: Support merge_group event.
     if: |-
       ${{ contains(fromJSON('["pull_request", "pull_request_review"]'), github.event_name) }}
-    runs-on: 'ubuntu-latest'
+    runs-on: 'self-hosted'
     steps:
       - name: '[WANT_LGTM] Want LGTM Status'
         uses: 'abcxyz/actions/.github/actions/want-lgtm@main' # ratchet:exclude

@@ -28,7 +28,7 @@ jobs:
   # Do not change this job name. Job names are used as identifiers in status
   # checks, and changing this name will cause status checks to fail.
   lint:
-    runs-on: 'ubuntu-latest'
+    runs-on: 'self-hosted'
     steps:
       - uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
       - name: 'Lint Shell'

@@ -21,7 +21,7 @@ on:
 
 jobs:
   remove-old-workflows:
-    runs-on: 'ubuntu-latest'
+    runs-on: 'self-hosted'
     permissions:
       contents: 'read'
       id-token: 'write'

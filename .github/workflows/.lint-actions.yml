@@ -37,7 +37,7 @@ jobs:
 
   lint:
     runs-on: |-
-      ${{ vars.LINT_RUNS_ON || 'ubuntu-latest' }}
+      ${{ vars.LINT_RUNS_ON || 'self-hosted' }}
     needs:
       - 'init'
     if: |
