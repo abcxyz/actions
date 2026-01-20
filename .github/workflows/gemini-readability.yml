@@ -46,12 +46,12 @@ jobs:
       github.repository != 'abcxyz/actions' && github.event_name == 'pull_request' && github.event.pull_request.draft == false
     steps:
       - name: 'Checkout repository'
-        uses: 'actions/checkout@08c6903cd8c0fde910a37f88322edcfb5dd907a8' # ratchet:actions/checkout@v5
+        uses: 'actions/checkout@8e8c483db84b4bee98b60c0593521ed34d9990e8' # ratchet:actions/checkout@v6
         with:
           fetch-depth: 1 # shallow clone
 
       - name: 'Setup Tagrep'
-        uses: 'abcxyz/actions/.github/actions/setup-binary@4354d52e96a232b28734c3a0cc39266ecc3d52e8' # ratchet:abcxyz/actions/.github/actions/setup-binary@main
+        uses: 'abcxyz/actions/.github/actions/setup-binary@dc53ac6837416a5942da3d494b9ea6c0997b7c59' # ratchet:abcxyz/actions/.github/actions/setup-binary@main
         with:
           download_url: 'https://github.com/abcxyz/tagrep/releases/download/v${{ env.TAGREP_VERSION }}/tagrep_${{ env.TAGREP_VERSION }}_linux_amd64.tar.gz'
           install_path: '${{ runner.temp }}/.tagrep'
@@ -125,7 +125,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: 'Run Gemini pull request review'
-        uses: 'google-github-actions/run-gemini-cli@57ee480c56252f519d8cd3a391b9e7aea2a8b9fa' # ratchet:google-github-actions/run-gemini-cli@main
+        uses: 'google-github-actions/run-gemini-cli@7eb1b82e7e9709ae93d97112df62f14db0b33ead' # ratchet:google-github-actions/run-gemini-cli@main
         id: 'gemini_pr_review'
         if: |
           env.DISABLE_READABILITY != 'true'
