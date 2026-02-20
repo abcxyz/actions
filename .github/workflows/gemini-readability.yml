@@ -146,10 +146,6 @@ jobs:
               "model": {
                 "maxSessionTurns": 25
               },
-              "telemetry": {
-                "enabled": "false",
-                "target": "gcp"
-              },
               "mcpServers": {
                 "github": {
                   "command": "docker",
