@@ -20,6 +20,11 @@ inputs:
     type: 'string'
     required: false
     default: '0.0.7'
+  ignore_bots:
+    description: 'Ignore approvals and review requests from bot accounts (logins ending in `[bot]`).'
+    type: 'boolean'
+    required: false
+    default: 'false'
 
 runs:
   using: 'composite'
@@ -49,6 +54,8 @@ runs:
       name: 'Validate Reviews'
       if: |-
         ${{ env.WANT_LGTM == 'all' }}
+      env:
+        IGNORE_BOTS: '${{ inputs.ignore_bots }}'
       uses: 'actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea' # ratchet:actions/github-script@v7
       with:
         retries: 3
@@ -65,6 +72,7 @@ runs:
           const reviewStateByLogin = {};
           submittedReviews
             .filter((r) => r.user.login !== context.payload.pull_request.user.login)
+            .filter((r) => process.env.IGNORE_BOTS === 'true' ? !r.user.login.endsWith('[bot]') : true)
             .sort((a, b) => new Date(a.submitted_at) - new Date(b.submitted_at))
             .forEach((r) => {
               // add value if it doesnt not exist
@@ -107,7 +115,9 @@ runs:
               pull_number: context.issue.number,
             });
 
-          const pendingUserApprovals = requestedReviewers.users.map((u) => u.login);
+          const pendingUserApprovals = requestedReviewers.users
+            .filter((u) => process.env.IGNORE_BOTS === 'true' ? !u.login.endsWith('[bot]') : true)
+            .map((u) => u.login);
           const pendingTeamApprovals = requestedReviewers.teams.map((t) => t.slug);
 
           const pendingApprovals = [...pendingUserApprovals, ...pendingTeamApprovals];

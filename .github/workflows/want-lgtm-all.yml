@@ -16,6 +16,12 @@ name: 'want-lgtm-all'
 
 on:
   workflow_call:
+    inputs:
+      ignore_bots:
+        description: 'Ignore approvals and review requests from bot accounts (logins ending in `[bot]`).'
+        required: false
+        type: 'boolean'
+        default: false
 
 concurrency:
   group: '${{ github.workflow }}-${{ github.head_ref || github.ref }}'
@@ -34,3 +40,5 @@ jobs:
     steps:
       - name: '[WANT_LGTM] Want LGTM Status'
         uses: 'abcxyz/actions/.github/actions/want-lgtm@main' # ratchet:exclude
+        with:
+          ignore_bots: '${{ inputs.ignore_bots }}'
