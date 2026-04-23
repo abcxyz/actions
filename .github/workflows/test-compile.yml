@@ -1,0 +1,46 @@
+name: 'test-compile'
+
+on:
+  pull_request:
+
+jobs:
+  compile:
+    runs-on: 'ubuntu-latest'
+    steps:
+
+      - name: Check CPU usage before build
+        run: |
+          echo "CPU info:"
+          nproc
+          echo "Load average:"
+          uptime
+        shell: bash
+
+      - name: Check CPU usage before build
+        run: |
+          echo "CPU info:"
+          nproc
+          echo "Load average:"
+          uptime
+        shell: bash
+
+      - name: 'test compile rust'
+        shell: 'bash'
+        env:
+          CARGO_TARGET_DIR: '${{ runner.temp }}'
+        run: |
+          set -eux
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt install cargo build-essential libudev-dev openssl libssl-dev linux-tools-common gcc-multilib libssl-dev:i386 \
+            && cargo install probe-rs-tools --timings 2>&1 | tee output.txt
+          timings_file="$(cat output.txt | grep 'Timing report saved to ' | awk '{print $NF}')"
+          cat "${timings_file}"
+          
+      - name: Check CPU usage before build
+        run: |
+          echo "CPU info:"
+          nproc
+          echo "Load average:"
+          uptime
+        shell: bash
