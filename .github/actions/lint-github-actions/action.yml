@@ -18,7 +18,7 @@ inputs:
   actionlint_version:
     description: 'The version of actionlint to install and use.'
     type: 'string'
-    default: '1.7.7'
+    default: '1.7.12'
   shellcheck_version:
     description: 'The version of actionlint to install and use.'
     type: 'string'
