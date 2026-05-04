@@ -45,7 +45,7 @@ inputs:
   # Note, must not start with GITHUB_
   # https://docs.github.com/en/actions/writing-workflows/choosing-what-your-workflow-does/store-information-in-variables#naming-conventions-for-configuration-variables
   actions_lint_actionlint_version:
-    default: '1.7.7'
+    default: '1.7.12'
   ##############
   ## DOCKER ####
   ##############
