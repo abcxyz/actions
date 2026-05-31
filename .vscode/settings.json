@@ -1,0 +1,6 @@
+{
+  "shellcheck.enable": true,
+  "shellcheck.run": "onType",
+  "shellcheck.useWorkspaceRootAsWorkDir": true,
+  "shellcheck.executablePath": "/usr/bin/shellcheck"
+}

@@ -67,21 +67,13 @@ runs:
         echo "::debug::Wrote configuration file to ${YAMLLINT_YAML}"
         echo "output-file=${YAMLLINT_YAML}" >> "${GITHUB_OUTPUT}"
 
-    - name: 'Lint (default configuration)'
-      if: |-
-        ${{ hashFiles('.yamllint.yml', '.yamllint.yaml') == '' }}
+    - name: 'Lint YAML'
       shell: 'bash'
       env:
         OUTPUT_FILE: '${{ steps.load-default-config.outputs.output-file }}'
-        TARGET: '${{ inputs.target }}'
-      run: |-
-        git ls-files | grep -E '\.(yaml|yml)' | xargs yamllint --format github -c "${OUTPUT_FILE}"
-
-    - name: 'Lint (custom configuration)'
-      if: |-
-        ${{ hashFiles('.yamllint.yml', '.yamllint.yaml') != '' }}
-      shell: 'bash'
-      env:
-        TARGET: '${{ inputs.target }}'
-      run: |-
-        git ls-files | grep -E '\.(yaml|yml)' | xargs yamllint --format github
+      run: |
+        ARGS=()
+        if [[ -n "${OUTPUT_FILE}" ]]; then
+          ARGS+=("-c" "${OUTPUT_FILE}")
+        fi
+        "${{ github.action_path }}/../../../scripts/lint-yaml.sh" "${ARGS[@]}" "${{ inputs.target }}"

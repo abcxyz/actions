@@ -65,20 +65,5 @@ runs:
         echo "::add-matcher::$(pwd)/problem-matcher-lint-shell.json"
 
     - name: 'Lint Shell'
-      env:
-        TARGET: '${{ inputs.target }}'
       shell: 'bash'
-      run: |-
-        # Note that only warning and error severity show up in the github files
-        # page. So we replace 'style' and 'note' with 'warning' to make it show
-        # up.
-        #
-        # 'Find all bash scripts even if they don't have an explicit extension.
-        git ls-files | grep -E '^([^.]+|.*\.(sh|zsh|bash))$' | xargs file --mime-type \
-          | grep "text/x-shellscript" | awk '{ print substr($1, 1, length($1)-1) }' \
-          | xargs shellcheck \
-            --check-sourced \
-            --enable=all \
-            --severity=style \
-            --format=gcc \
-            --color=never | sed -e 's/note:/warning:/g' -e 's/style:/warning:/g'
+      run: '${{ github.action_path }}/../../../scripts/lint-shell.sh "${{ inputs.target }}"'
