@@ -56,7 +56,7 @@ inputs:
     required: false
     default: 'false'
   changed_paths:
-    description: 'JSON array of the relative file paths added or changed in the pull request. Defaults to `[]`.'
+    description: 'JSON array of the relative file paths added or changed in the pull request. Supports directory paths for git submodules. Defaults to `[]`.'
     required: false
     default: '[]'
   deleted_paths:
@@ -280,6 +280,7 @@ runs:
             // documented here: https://docs.github.com/en/rest/git/trees?apiVersion=2022-11-28#create-a-tree
             const FILE_MODE = "100644";
             const EXEC_MODE = "100755";
+            const SUBMODULE_MODE = "160000";
 
             const prCommitTree = [];
 
@@ -289,15 +290,31 @@ runs:
             // iterate the files loading their content into each object
             await Promise.all(
               changedPaths.map(async (file) => {
-                core.debug("processing changed file: ${file}...")
-                const content = await fs.readFile(file, { encoding: "utf8" });
-                const isExec = !!((await fs.stat(file).mode) & fs.constants.S_IXUSR);
-                prCommitTree.push({
-                  path: file,
-                  mode: isExec ? EXEC_MODE : FILE_MODE,
-                  type: "blob",
-                  content: content,
-                });
+                core.debug(`processing changed file: ${file}...`);
+                const isDir = (await fs.lstat(file)).isDirectory();
+                if (isDir) {
+                  const statusRes = await exec.getExecOutput("git", ["submodule", "status", "--", file], { ignoreReturnCode: true });
+                  if (statusRes.exitCode !== 0 || !statusRes.stdout || statusRes.stdout.trim() === "") {
+                    throw new Error(`Directory '${file}' is not a valid Git submodule`);
+                  }
+                  const { stdout } = await exec.getExecOutput("git", ["-C", file, "rev-parse", "HEAD"]);
+                  const submoduleSha = stdout.trim();
+                  prCommitTree.push({
+                    path: file,
+                    mode: SUBMODULE_MODE,
+                    type: "commit",
+                    sha: submoduleSha,
+                  });
+                } else {
+                  const content = await fs.readFile(file, { encoding: "utf8" });
+                  const isExec = !!((await fs.stat(file).mode) & fs.constants.S_IXUSR);
+                  prCommitTree.push({
+                    path: file,
+                    mode: isExec ? EXEC_MODE : FILE_MODE,
+                    type: "blob",
+                    content: content,
+                  });
+                }
               })
             );
 
