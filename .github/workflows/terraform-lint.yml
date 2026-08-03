@@ -39,6 +39,11 @@ on:
         type: 'string'
         required: false
         default: ''
+      terraform_linter_ignore_rules:
+        description: 'The comma-separated list of linter rules to ignore.'
+        type: 'string'
+        required: false
+        default: ''
 
 env:
   TF_IN_AUTOMATION: 'true'
@@ -62,3 +67,4 @@ jobs:
           directory: '${{ inputs.directory }}'
           walk_dirs: '${{ inputs.walk_dirs }}'
           ignored_walk_dirs: '${{ inputs.ignored_walk_dirs }}'
+          terraform_linter_ignore_rules: '${{ inputs.terraform_linter_ignore_rules }}'
