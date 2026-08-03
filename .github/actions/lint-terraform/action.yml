@@ -29,6 +29,11 @@ inputs:
     type: 'string'
     required: true
     default: '0.2.0'
+  terraform_linter_ignore_rules:
+    description: 'The comma-separated list of linter rules to ignore.'
+    type: 'string'
+    required: false
+    default: ''
 
 runs:
   using: 'composite'
@@ -60,5 +65,6 @@ runs:
       env:
         LINT_PATHS: |-
           ${{ inputs.directory || '.' }}
+        TFLINT_IGNORE_RULES: '${{ inputs.terraform_linter_ignore_rules }}'
       run: |-
         terraform-linter lint ${LINT_PATHS}
