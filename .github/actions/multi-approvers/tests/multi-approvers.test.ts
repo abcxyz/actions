@@ -18,7 +18,7 @@ import nock from "nock";
 import {
   MultiApproversAction,
   MultiApproversParams,
-} from "../src/multi-approvers";
+} from "../src/multi-approvers.js";
 
 const GITHUB_API_BASE_URL = "https://api.github.com";
 

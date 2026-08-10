@@ -16,7 +16,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import * as ghCore from "@actions/core";
 import { context as ghContext } from "@actions/github";
-import { main } from "../src/main";
+import { main } from "../src/main.js";
 
 type Core = typeof ghCore;
 type Context = typeof ghContext;
