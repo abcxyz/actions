@@ -29,7 +29,7 @@ RUN ./scancode --help
 ENV PATH=$HOME/scancode-toolkit:$PATH
 
 COPY requirements.txt /requirements.txt
-RUN pip3 install --require-hashes -r requirements.txt
+RUN pip3 install --require-hashes -r /requirements.txt
 
 COPY entrypoint.sh /entrypoint.sh
 
