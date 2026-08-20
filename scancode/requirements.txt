@@ -4,8 +4,7 @@
 #
 #    pip-compile --generate-hashes requirements.in
 #
---index-url http://airlock-proxy.uplink.goog:999/python/artifact-foundry-prod/ah-3p-staging-python/simple/
---trusted-host airlock-proxy.uplink.goog
+
 
 pyyaml==6.0.3 \
     --hash=sha256:00c4bdeba853cc34e7dd471f16b4114f4162dc03e6b7afcc2128711f0eca823c \
