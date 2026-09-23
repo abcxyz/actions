@@ -1,0 +1,176 @@
+# Copyright 2026 The Authors (see AUTHORS file)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: 'Check Rate Limit'
+description: |-
+  Reports the REST API rate limit budget for a token and, optionally, reports
+  whether there is enough of it left to proceed. Works against github.com and
+  GitHub Enterprise Server. GET /rate_limit does not itself consume quota.
+
+inputs:
+  github_token:
+    description: 'The token whose budget is checked.'
+    type: 'string'
+    required: false
+    default: '${{ github.token }}'
+  api_url:
+    description: 'REST API base URL. Defaults to the current instance.'
+    type: 'string'
+    required: false
+    default: '${{ github.api_url }}'
+  resource:
+    description: 'Resource to check: core, graphql, search, code_search, ...'
+    type: 'string'
+    required: false
+    default: 'core'
+  threshold:
+    description: |-
+      Requests that must remain for proceed to be true. 0 always proceeds.
+    type: 'string'
+    required: false
+    default: '0'
+  fail_below_threshold:
+    description: 'Fail the step below threshold instead of only reporting it.'
+    type: 'boolean'
+    required: false
+    default: false
+
+outputs:
+  proceed:
+    description: 'Whether remaining is at or above threshold.'
+    value: '${{ steps.check.outputs.proceed }}'
+  remaining:
+    description: 'Requests left in the window. Empty when unknown.'
+    value: '${{ steps.check.outputs.remaining }}'
+  limit:
+    description: 'Requests allowed per window. Empty when unknown.'
+    value: '${{ steps.check.outputs.limit }}'
+  used:
+    description: 'Requests spent in the window. Empty when unknown.'
+    value: '${{ steps.check.outputs.used }}'
+  reset:
+    description: 'Epoch seconds at which the window resets. Empty when unknown.'
+    value: '${{ steps.check.outputs.reset }}'
+  reset_in_seconds:
+    description: 'Seconds until the window resets. Empty when unknown.'
+    value: '${{ steps.check.outputs.reset_in_seconds }}'
+  resources:
+    description: |-
+      Every bucket the instance reports, as JSON, each with reset_in_seconds
+      added. {} when rate limiting is off.
+    value: '${{ steps.check.outputs.resources }}'
+  enabled:
+    description: 'False when the instance has rate limiting turned off.'
+    value: '${{ steps.check.outputs.enabled }}'
+
+runs:
+  using: 'composite'
+  steps:
+    - id: 'check'
+      uses: 'actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea' # ratchet:actions/github-script@v7
+      env:
+        RESOURCE: '${{ inputs.resource }}'
+        THRESHOLD: '${{ inputs.threshold }}'
+        FAIL_BELOW_THRESHOLD: '${{ inputs.fail_below_threshold }}'
+      with:
+        github-token: '${{ inputs.github_token }}'
+        base-url: '${{ inputs.api_url }}'
+        retries: 3
+        script: |-
+          const resource = process.env.RESOURCE;
+          const threshold = Number.parseInt(process.env.THRESHOLD || '0', 10);
+          if (!Number.isInteger(threshold) || threshold < 0) {
+            core.setFailed(`threshold must be a non-negative integer, got [${process.env.THRESHOLD}].`);
+            return;
+          }
+
+          const emit = (outputs) => {
+            for (const [name, value] of Object.entries(outputs)) {
+              core.setOutput(name, String(value));
+            }
+          };
+
+          let data;
+          try {
+            ({ data } = await github.request('GET /rate_limit'));
+          } catch (err) {
+            // GitHub Enterprise Server answers 404 when rate limiting is off.
+            if (err.status !== 404) {
+              throw err;
+            }
+            core.info('Rate limiting is not enabled on this instance.');
+            emit({
+              enabled: false,
+              proceed: true,
+              remaining: '',
+              limit: '',
+              used: '',
+              reset: '',
+              reset_in_seconds: '',
+              resources: '{}',
+            });
+            return;
+          }
+
+          const reported = data?.resources;
+          if (!reported || typeof reported !== 'object') {
+            core.setFailed('GET /rate_limit did not return a rate limit payload. Check that api_url points at the REST API and that the token reaches it unintercepted.');
+            return;
+          }
+
+          // Windows differ per bucket -- an hour for core and graphql, a minute
+          // for search and friends -- and nothing in the payload says which, so
+          // publish the distance to the reset alongside it.
+          const now = Math.floor(Date.now() / 1000);
+          const resources = Object.fromEntries(
+            Object.entries(reported)
+              .sort(([a], [b]) => a.localeCompare(b))
+              .map(([name, bucket]) => [name, { ...bucket, reset_in_seconds: Math.max(0, bucket.reset - now) }]));
+
+          core.startGroup('Rate limit');
+          for (const [name, bucket] of Object.entries(resources)) {
+            core.info(`${name}: ${bucket.remaining} of ${bucket.limit} remaining, resets in ${bucket.reset_in_seconds}s`);
+          }
+          core.endGroup();
+
+          const rate = resources[resource];
+          if (!rate) {
+            core.setFailed(`Unknown resource [${resource}]; this instance reports [${Object.keys(resources).join(', ')}].`);
+            return;
+          }
+
+          const proceed = rate.remaining >= threshold;
+          emit({
+            enabled: true,
+            proceed,
+            remaining: rate.remaining,
+            limit: rate.limit,
+            used: rate.used,
+            reset: rate.reset,
+            reset_in_seconds: rate.reset_in_seconds,
+            resources: JSON.stringify(resources),
+          });
+
+          const status = `[${resource}]: [${rate.remaining}] of [${rate.limit}] request(s) remaining, resets in [${rate.reset_in_seconds}] second(s).`;
+          if (proceed) {
+            core.info(status);
+            return;
+          }
+
+          const belowThreshold = `${status} Below the threshold of [${threshold}].`;
+          if (process.env.FAIL_BELOW_THRESHOLD === 'true') {
+            core.setFailed(belowThreshold);
+            return;
+          }
+          core.warning(belowThreshold);
