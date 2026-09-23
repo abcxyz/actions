@@ -1,0 +1,321 @@
+# Copyright 2026 The Authors (see AUTHORS file)
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+name: 'check-rate-limit-test'
+
+on:
+  pull_request:
+    paths:
+      - '.github/actions/check-rate-limit/**'
+      - '.github/workflows/.check-rate-limit-test.yml'
+
+env:
+  MOCK_API: 'http://127.0.0.1:8081'
+
+jobs:
+  # The real API, which is the only way to catch a break against github.com.
+  # Threshold 1 because a run with no budget left could not have got this far.
+  live:
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+    steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+
+      - name: 'Check Rate Limit'
+        id: 'check'
+        uses: './.github/actions/check-rate-limit' # ratchet:exclude
+        with:
+          threshold: '1'
+
+      - name: 'Test'
+        shell: 'bash'
+        env:
+          PROCEED: '${{ steps.check.outputs.proceed }}'
+          REMAINING: '${{ steps.check.outputs.remaining }}'
+          LIMIT: '${{ steps.check.outputs.limit }}'
+          ENABLED: '${{ steps.check.outputs.enabled }}'
+          RESOURCES: '${{ steps.check.outputs.resources }}'
+        run: |-
+          if [[ "${PROCEED}" != "true" ]]; then
+            echo "proceed - got ${PROCEED} want true"
+            FAILURES="true"
+          fi
+
+          if [[ "${ENABLED}" != "true" ]]; then
+            echo "enabled - got ${ENABLED} want true"
+            FAILURES="true"
+          fi
+
+          if [[ ! "${REMAINING}" =~ ^[0-9]+$ ]]; then
+            echo "remaining - got ${REMAINING} want an integer"
+            FAILURES="true"
+          fi
+
+          if [[ ! "${LIMIT}" =~ ^[0-9]+$ ]]; then
+            echo "limit - got ${LIMIT} want an integer"
+            FAILURES="true"
+          fi
+
+          # Every bucket the instance reports, not just the one gated on.
+          GOT="$(jq -r '.core.remaining' <<< "${RESOURCES}")"
+          if [[ "${GOT}" != "${REMAINING}" ]]; then
+            echo "resources.core.remaining - got ${GOT} want ${REMAINING}"
+            FAILURES="true"
+          fi
+
+          GOT="$(jq -r '[.[] | select(.reset_in_seconds == null)] | length' <<< "${RESOURCES}")"
+          if [[ "${GOT}" != "0" ]]; then
+            echo "resources - ${GOT} bucket(s) missing reset_in_seconds"
+            FAILURES="true"
+          fi
+
+          if [[ -n "${FAILURES}" ]]; then
+            exit 1
+          fi
+
+  # Budgets a live API will not reproduce on demand, plus the failure modes.
+  mock:
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+    steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+
+      - name: 'Start Mock API'
+        shell: 'bash'
+        run: |-
+          python3 .github/actions/check-rate-limit/testdata/mock_api.py 8081 &
+
+          for _ in $(seq 1 20); do
+            if curl -fsS "${MOCK_API}/normal/rate_limit" > /dev/null; then
+              exit 0
+            fi
+            sleep 0.5
+          done
+
+          echo "mock API never became ready"
+          exit 1
+
+      - name: 'Above Threshold'
+        id: 'above'
+        uses: './.github/actions/check-rate-limit' # ratchet:exclude
+        with:
+          github_token: 'mock-token'
+          api_url: '${{ env.MOCK_API }}/normal'
+          threshold: '100'
+
+      - name: 'Below Threshold'
+        id: 'below'
+        uses: './.github/actions/check-rate-limit' # ratchet:exclude
+        with:
+          github_token: 'mock-token'
+          api_url: '${{ env.MOCK_API }}/low'
+          threshold: '100'
+
+      - name: 'No Threshold'
+        id: 'no-threshold'
+        uses: './.github/actions/check-rate-limit' # ratchet:exclude
+        with:
+          github_token: 'mock-token'
+          api_url: '${{ env.MOCK_API }}/low'
+
+      - name: 'Non-Core Bucket'
+        id: 'search'
+        uses: './.github/actions/check-rate-limit' # ratchet:exclude
+        with:
+          github_token: 'mock-token'
+          api_url: '${{ env.MOCK_API }}/normal'
+          resource: 'search'
+          threshold: '30'
+
+      - name: 'Rate Limiting Disabled'
+        id: 'disabled'
+        uses: './.github/actions/check-rate-limit' # ratchet:exclude
+        with:
+          github_token: 'mock-token'
+          api_url: '${{ env.MOCK_API }}/disabled'
+          threshold: '100'
+
+      - name: 'Fail Below Threshold'
+        id: 'fail-below-threshold'
+        continue-on-error: true
+        uses: './.github/actions/check-rate-limit' # ratchet:exclude
+        with:
+          github_token: 'mock-token'
+          api_url: '${{ env.MOCK_API }}/low'
+          threshold: '100'
+          fail_below_threshold: true
+
+      - name: 'Unknown Resource'
+        id: 'unknown-resource'
+        continue-on-error: true
+        uses: './.github/actions/check-rate-limit' # ratchet:exclude
+        with:
+          github_token: 'mock-token'
+          api_url: '${{ env.MOCK_API }}/normal'
+          resource: 'nope'
+
+      - name: 'Negative Threshold'
+        id: 'negative-threshold'
+        continue-on-error: true
+        uses: './.github/actions/check-rate-limit' # ratchet:exclude
+        with:
+          github_token: 'mock-token'
+          api_url: '${{ env.MOCK_API }}/normal'
+          threshold: '-1'
+
+      - name: 'Intercepted Response'
+        id: 'intercepted'
+        continue-on-error: true
+        uses: './.github/actions/check-rate-limit' # ratchet:exclude
+        with:
+          github_token: 'mock-token'
+          api_url: '${{ env.MOCK_API }}/intercepted'
+
+      - name: 'Test'
+        shell: 'bash'
+        env:
+          ABOVE_PROCEED: '${{ steps.above.outputs.proceed }}'
+          ABOVE_REMAINING: '${{ steps.above.outputs.remaining }}'
+          ABOVE_LIMIT: '${{ steps.above.outputs.limit }}'
+          ABOVE_USED: '${{ steps.above.outputs.used }}'
+          ABOVE_RESET: '${{ steps.above.outputs.reset }}'
+          ABOVE_RESET_IN: '${{ steps.above.outputs.reset_in_seconds }}'
+          ABOVE_RESOURCES: '${{ steps.above.outputs.resources }}'
+          SEARCH_PROCEED: '${{ steps.search.outputs.proceed }}'
+          SEARCH_REMAINING: '${{ steps.search.outputs.remaining }}'
+          SEARCH_RESET_IN: '${{ steps.search.outputs.reset_in_seconds }}'
+          BELOW_PROCEED: '${{ steps.below.outputs.proceed }}'
+          BELOW_REMAINING: '${{ steps.below.outputs.remaining }}'
+          NO_THRESHOLD_PROCEED: '${{ steps.no-threshold.outputs.proceed }}'
+          DISABLED_PROCEED: '${{ steps.disabled.outputs.proceed }}'
+          DISABLED_ENABLED: '${{ steps.disabled.outputs.enabled }}'
+          DISABLED_REMAINING: '${{ steps.disabled.outputs.remaining }}'
+          DISABLED_RESOURCES: '${{ steps.disabled.outputs.resources }}'
+          FAIL_BELOW_THRESHOLD_OUTCOME: '${{ steps.fail-below-threshold.outcome }}'
+          UNKNOWN_RESOURCE_OUTCOME: '${{ steps.unknown-resource.outcome }}'
+          NEGATIVE_THRESHOLD_OUTCOME: '${{ steps.negative-threshold.outcome }}'
+          INTERCEPTED_OUTCOME: '${{ steps.intercepted.outcome }}'
+        run: |-
+          assert() {
+            if [[ "$2" != "$3" ]]; then
+              echo "$1 - got $2 want $3"
+              FAILURES="true"
+            fi
+          }
+
+          assert "above.proceed" "${ABOVE_PROCEED}" "true"
+          assert "above.remaining" "${ABOVE_REMAINING}" "4000"
+          assert "above.limit" "${ABOVE_LIMIT}" "5000"
+          assert "above.used" "${ABOVE_USED}" "1000"
+
+          if [[ ! "${ABOVE_RESET}" =~ ^[0-9]+$ ]]; then
+            echo "above.reset - got ${ABOVE_RESET} want an integer"
+            FAILURES="true"
+          fi
+
+          assert "below.proceed" "${BELOW_PROCEED}" "false"
+          assert "below.remaining" "${BELOW_REMAINING}" "50"
+
+          # Threshold 0 proceeds on the budget that a threshold of 100 rejects.
+          assert "no-threshold.proceed" "${NO_THRESHOLD_PROCEED}" "true"
+
+          assert "above.reset_in_seconds" "${ABOVE_RESET_IN}" "3600"
+          assert "above.resources buckets" "$(jq -r 'keys | join(",")' <<< "${ABOVE_RESOURCES}")" "core,search"
+          assert "above.resources search.remaining" "$(jq -r '.search.remaining' <<< "${ABOVE_RESOURCES}")" "25"
+          # The window is per bucket: an hour for core, a minute for search.
+          assert "above.resources search.reset_in_seconds" "$(jq -r '.search.reset_in_seconds' <<< "${ABOVE_RESOURCES}")" "60"
+
+          # Gating on a bucket other than core.
+          assert "search.proceed" "${SEARCH_PROCEED}" "false"
+          assert "search.remaining" "${SEARCH_REMAINING}" "25"
+          assert "search.reset_in_seconds" "${SEARCH_RESET_IN}" "60"
+
+          assert "disabled.proceed" "${DISABLED_PROCEED}" "true"
+          assert "disabled.enabled" "${DISABLED_ENABLED}" "false"
+          assert "disabled.remaining" "${DISABLED_REMAINING}" ""
+          assert "disabled.resources" "${DISABLED_RESOURCES}" "{}"
+
+          assert "fail-below-threshold.outcome" "${FAIL_BELOW_THRESHOLD_OUTCOME}" "failure"
+          assert "unknown-resource.outcome" "${UNKNOWN_RESOURCE_OUTCOME}" "failure"
+          assert "negative-threshold.outcome" "${NEGATIVE_THRESHOLD_OUTCOME}" "failure"
+          assert "intercepted.outcome" "${INTERCEPTED_OUTCOME}" "failure"
+
+          if [[ -n "${FAILURES}" ]]; then
+            exit 1
+          fi
+
+  # The point of the outputs: a downstream job skips itself on the verdict. The
+  # threshold is unreachable, so proceed is false without needing a mock.
+  gate:
+    runs-on: 'ubuntu-latest'
+    permissions:
+      contents: 'read'
+    outputs:
+      proceed: '${{ steps.check.outputs.proceed }}'
+    steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+
+      - name: 'Check Rate Limit'
+        id: 'check'
+        uses: './.github/actions/check-rate-limit' # ratchet:exclude
+        with:
+          threshold: '100000000'
+
+  gated:
+    runs-on: 'ubuntu-latest'
+    permissions: {}
+    needs:
+      - 'gate'
+    if: |-
+      needs.gate.outputs.proceed == 'true'
+    steps:
+      - name: 'Should Not Run'
+        shell: 'bash'
+        run: |-
+          echo "gate.proceed was false; this job should have been skipped"
+          exit 1
+
+  gated-test:
+    runs-on: 'ubuntu-latest'
+    permissions: {}
+    needs:
+      - 'gate'
+      - 'gated'
+    if: |-
+      always()
+    steps:
+      - name: 'Test'
+        shell: 'bash'
+        env:
+          GATE_PROCEED: '${{ needs.gate.outputs.proceed }}'
+          GATED_RESULT: '${{ needs.gated.result }}'
+        run: |-
+          if [[ "${GATE_PROCEED}" != "false" ]]; then
+            echo "gate.proceed - got ${GATE_PROCEED} want false"
+            FAILURES="true"
+          fi
+
+          if [[ "${GATED_RESULT}" != "skipped" ]]; then
+            echo "gated.result - got ${GATED_RESULT} want skipped"
+            FAILURES="true"
+          fi
+
+          if [[ -n "${FAILURES}" ]]; then
+            exit 1
+          fi
