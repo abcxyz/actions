@@ -1,0 +1,22 @@
+name: 'Vulnerable Workflow To Test Action Scanning'
+
+on:
+  pull_request_target:
+    types: ['opened', 'synchronize']
+
+jobs:
+  vulnerable-job:
+    runs-on: 'ubuntu-latest'
+    steps:
+      - name: 'Checkout'
+        uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
+        with:
+          ref: '${{ github.event.pull_request.head.sha }}'
+
+      - name: 'Run PR Code'
+        run: |
+          echo "Echo not actually running anything, but the scanner isn't smart enough to know that."
+          if false; then
+             chmod +x build.sh
+            ./build.sh
+          fi
