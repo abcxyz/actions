@@ -1,0 +1,13 @@
+#!/bin/bash
+#MISE description="Lint yaml files"
+#MISE quiet=true
+#MISE tools={ pipx = "1.7.1", python = "3.12", yamllint = "1.35.1" }
+if [[ -n "${GITHUB_WORKSPACE}" ]]; then FORMAT="github"; else FORMAT="colored"; fi
+DEFAULT_YAML_CONFIG="https://raw.githubusercontent.com/abcxyz/actions/main/.yamllint.yml"
+ABC_MISE_CACHE="${HOME}/.cache/abc/mise"
+YAML_CONFIG="${ABC_MISE_CACHE}/.yamllint.yml"
+mkdir -p "${ABC_MISE_CACHE}"
+if [[ ! -f "${YAML_CONFIG}" ]]; then
+    wget "${DEFAULT_YAML_CONFIG}" -P "${ABC_MISE_CACHE}"
+fi
+git ls-files | grep -E '\.(yaml|yml)' | xargs yamllint --format "${FORMAT}" -c "${YAML_CONFIG}"
