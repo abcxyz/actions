@@ -16,7 +16,5 @@ files_input="$(find ./* -type f -not -path './node_modules/*' -name '*.test.ts' 
 readarray -t files <<<"${files_input}"
 
 set -x
-exec node \
-  --require ts-node/register \
-  --test-reporter spec \
+exec npx tsx \
   --test "${files[@]}"

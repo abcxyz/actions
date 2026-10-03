@@ -1,32 +1,33 @@
 {
   "name": "multi-approvers",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "GitHub Action that enforces approver requriements.",
   "author": "Google LLC",
   "license": "Apache-2.0",
-  "type": "commonjs",
+  "type": "module",
   "scripts": {
-    "build": "ncc build -m src/main.ts -o dist",
+    "build": "bash ./bin/build.sh",
     "format": "eslint . --fix",
     "lint": "eslint .",
     "test": "bash ./bin/test.sh"
   },
   "dependencies": {
-    "@actions/core": "^1.11.1",
-    "@actions/github": "^6.0.0",
-    "@google-github-actions/actions-utils": "^0.8.6"
+    "@actions/core": "^3.0.1",
+    "@actions/github": "^9.1.1",
+    "@google-github-actions/actions-utils": "^0.8.10"
   },
   "devDependencies": {
-    "@eslint/js": "^9.23.0",
-    "@types/node": "^22.13.17",
-    "@vercel/ncc": "^0.38.3",
-    "eslint": "^9.23.0",
-    "eslint-config-prettier": "^10.1.1",
-    "eslint-plugin-prettier": "^5.2.5",
-    "nock": "^14.0.2",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.8.2",
-    "typescript-eslint": "^8.29.0"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^25.9.2",
+    "@vercel/ncc": "^0.38.4",
+    "esbuild": "^0.28.0",
+    "eslint": "^10.4.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.6",
+    "nock": "^14.0.15",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.60.1"
   },
-  "exports": "dist/index.js"
+  "exports": "./dist/index.mjs"
 }
