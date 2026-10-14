@@ -101,30 +101,37 @@ runs:
       run: |-
         # Install hashicorp/go-getter
         # Prints a local copy of a github.com release asset fetched from the same
-        # path on this GHES instance, or the original URL if there is none.
+        # release on this GHES instance, or the original URL if there is none.
         resolve_release_mirror() {
           local url="$1" dest="$2" server="${GITHUB_SERVER_URL:-https://github.com}"
-          local re='^https://github\.com/([^/]+/[^/]+/releases/download/[^?]+)(\?.*)?$'
+          local re='^https://github\.com/([^/]+/[^/]+)/releases/download/([^/?]+)/([^/?]+)(\?.*)?$'
           if [[ "${RELEASE_MIRROR_LOOKUP:-true}" != "true" || "${server%/}" == "https://github.com" || ! "${url}" =~ ${re} ]]; then
             echo "${url}"
             return
           fi
-          local path="${BASH_REMATCH[1]}" query="${BASH_REMATCH[2]}"
-          local mirror="${server%/}/${path}" file meta effective host
+          local repo="${BASH_REMATCH[1]}" tag="${BASH_REMATCH[2]}" name="${BASH_REMATCH[3]}" query="${BASH_REMATCH[4]}"
+          local api="${GITHUB_API_URL:-${server%/}/api/v3}" asset file type
+          name="$(printf '%b' "${name//%/\\x}")"
+          # GHES only accepts tokens on the API, not on /releases/download/ (which
+          # redirects to the login page), so resolve the asset through the API.
+          asset="$(curl -sSf --retry 2 -H "Authorization: token ${GITHUB_TOKEN}" \
+              "${api}/repos/${repo}/releases/tags/${tag}" 2>/dev/null | tr ',' '\n' |
+            awk -v n="${name}" '
+              match($0, /"url": *"[^"]*\/releases\/assets\/[0-9]+"/) { u = substr($0, RSTART, RLENGTH); sub(/^"url": *"/, "", u); sub(/"$/, "", u) }
+              index($0, "\"name\": \"" n "\"") && u != "" { print u; exit }')" || true
           mkdir -p "${dest}"
-          file="${dest}/$(basename "${path}")"
-          # The token is only sent to the instance: curl drops it on cross-host redirects.
-          # A login or error page can come back as 200 after redirects, so treat HTML
-          # or a login host as a miss.
-          if meta="$(curl -sSfL --retry 2 --max-time 300 -H "Authorization: token ${GITHUB_TOKEN}" \
-              -o "${file}" -w '%{content_type} %{url_effective}' "${mirror}" 2>/dev/null)" &&
-            effective="${meta#* }" && host="${effective#*://}" && host="${host%%/*}" &&
-            [[ "${meta%% *}" != text/html* && "${host}" != login.* && -s "${file}" ]]; then
-            echo "Using ${mirror}" >&2
+          file="${dest}/${name}"
+          # The token is only sent to the instance: curl drops it on cross-host
+          # redirects. Treat an HTML response (e.g. a login page) as a miss.
+          if [[ -n "${asset}" ]] &&
+            type="$(curl -sSfL --retry 2 --max-time 300 -H "Authorization: token ${GITHUB_TOKEN}" \
+              -H 'Accept: application/octet-stream' -o "${file}" -w '%{content_type}' "${asset}" 2>/dev/null)" &&
+            [[ "${type}" != text/html* && -s "${file}" ]]; then
+            echo "Using ${server%/}/${repo}/releases/download/${tag}/${name}" >&2
             echo "${file}${query}"
           else
             rm -f "${file}"
-            echo "No copy at ${mirror}; using ${url}" >&2
+            echo "No copy of ${repo} ${tag} ${name} on ${server%/}; using ${url}" >&2
             echo "${url}"
           fi
         }
@@ -176,30 +183,37 @@ runs:
       run: |-
         # Download binary
         # Prints a local copy of a github.com release asset fetched from the same
-        # path on this GHES instance, or the original URL if there is none.
+        # release on this GHES instance, or the original URL if there is none.
         resolve_release_mirror() {
           local url="$1" dest="$2" server="${GITHUB_SERVER_URL:-https://github.com}"
-          local re='^https://github\.com/([^/]+/[^/]+/releases/download/[^?]+)(\?.*)?$'
+          local re='^https://github\.com/([^/]+/[^/]+)/releases/download/([^/?]+)/([^/?]+)(\?.*)?$'
           if [[ "${RELEASE_MIRROR_LOOKUP:-true}" != "true" || "${server%/}" == "https://github.com" || ! "${url}" =~ ${re} ]]; then
             echo "${url}"
             return
           fi
-          local path="${BASH_REMATCH[1]}" query="${BASH_REMATCH[2]}"
-          local mirror="${server%/}/${path}" file meta effective host
+          local repo="${BASH_REMATCH[1]}" tag="${BASH_REMATCH[2]}" name="${BASH_REMATCH[3]}" query="${BASH_REMATCH[4]}"
+          local api="${GITHUB_API_URL:-${server%/}/api/v3}" asset file type
+          name="$(printf '%b' "${name//%/\\x}")"
+          # GHES only accepts tokens on the API, not on /releases/download/ (which
+          # redirects to the login page), so resolve the asset through the API.
+          asset="$(curl -sSf --retry 2 -H "Authorization: token ${GITHUB_TOKEN}" \
+              "${api}/repos/${repo}/releases/tags/${tag}" 2>/dev/null | tr ',' '\n' |
+            awk -v n="${name}" '
+              match($0, /"url": *"[^"]*\/releases\/assets\/[0-9]+"/) { u = substr($0, RSTART, RLENGTH); sub(/^"url": *"/, "", u); sub(/"$/, "", u) }
+              index($0, "\"name\": \"" n "\"") && u != "" { print u; exit }')" || true
           mkdir -p "${dest}"
-          file="${dest}/$(basename "${path}")"
-          # The token is only sent to the instance: curl drops it on cross-host redirects.
-          # A login or error page can come back as 200 after redirects, so treat HTML
-          # or a login host as a miss.
-          if meta="$(curl -sSfL --retry 2 --max-time 300 -H "Authorization: token ${GITHUB_TOKEN}" \
-              -o "${file}" -w '%{content_type} %{url_effective}' "${mirror}" 2>/dev/null)" &&
-            effective="${meta#* }" && host="${effective#*://}" && host="${host%%/*}" &&
-            [[ "${meta%% *}" != text/html* && "${host}" != login.* && -s "${file}" ]]; then
-            echo "Using ${mirror}" >&2
+          file="${dest}/${name}"
+          # The token is only sent to the instance: curl drops it on cross-host
+          # redirects. Treat an HTML response (e.g. a login page) as a miss.
+          if [[ -n "${asset}" ]] &&
+            type="$(curl -sSfL --retry 2 --max-time 300 -H "Authorization: token ${GITHUB_TOKEN}" \
+              -H 'Accept: application/octet-stream' -o "${file}" -w '%{content_type}' "${asset}" 2>/dev/null)" &&
+            [[ "${type}" != text/html* && -s "${file}" ]]; then
+            echo "Using ${server%/}/${repo}/releases/download/${tag}/${name}" >&2
             echo "${file}${query}"
           else
             rm -f "${file}"
-            echo "No copy at ${mirror}; using ${url}" >&2
+            echo "No copy of ${repo} ${tag} ${name} on ${server%/}; using ${url}" >&2
             echo "${url}"
           fi
         }
