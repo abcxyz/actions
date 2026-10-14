@@ -57,14 +57,21 @@ runs:
       shell: 'bash'
       env:
         GOOGLE_JAVA_FORMAT_VERSION: '${{ inputs.google_java_format_version }}'
+        SETUP_BINARY_PATH: '${{ github.action_path }}/../setup-binary'
+        GITHUB_TOKEN: '${{ github.token }}'
       run: |-
         BIN="${{ runner.tool_cache }}/google-java-format-${GOOGLE_JAVA_FORMAT_VERSION}"
 
         if [[ -x "${BIN}" ]]; then
           echo "Already installed!"
         else
-          curl -sLfo "${BIN}" \
-            https://github.com/google/google-java-format/releases/download/v${GOOGLE_JAVA_FORMAT_VERSION}/google-java-format_linux-x86-64
+          URL="https://github.com/google/google-java-format/releases/download/v${GOOGLE_JAVA_FORMAT_VERSION}/google-java-format_linux-x86-64"
+          SOURCE="$("${SETUP_BINARY_PATH}/resolve-release-mirror.sh" "${URL}" "${RUNNER_TEMP}/lint-java-mirror")"
+          if [[ "${SOURCE}" == "${URL}" ]]; then
+            curl -sLfo "${BIN}" "${URL}"
+          else
+            mv "${SOURCE}" "${BIN}"
+          fi
           chmod +x "${BIN}"
         fi
 
