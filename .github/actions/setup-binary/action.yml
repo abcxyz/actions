@@ -40,6 +40,10 @@ inputs:
   destination_subpath:
     description: 'The destination subpath of the binary relative to the install path. This should include the binary name (e.g. dist/binary-name) and is useful for renaming the binary after download.'
     required: false
+  release_mirror_lookup:
+    description: 'On GitHub Enterprise Server, first try the same github.com release asset path on the current GitHub host (`github.server_url`) and fall back to github.com if it is not there. Has no effect on github.com.'
+    default: 'true'
+    required: false
 
 runs:
   using: 'composite'
@@ -92,8 +96,39 @@ runs:
       shell: 'bash'
       env:
         GOGETTER_VERSION: '1.7.1'
+        GITHUB_TOKEN: '${{ github.token }}'
+        RELEASE_MIRROR_LOOKUP: '${{ inputs.release_mirror_lookup }}'
       run: |-
         # Install hashicorp/go-getter
+        # Prints a local copy of a github.com release asset fetched from the same
+        # path on this GHES instance, or the original URL if there is none.
+        resolve_release_mirror() {
+          local url="$1" dest="$2" server="${GITHUB_SERVER_URL:-https://github.com}"
+          local re='^https://github\.com/([^/]+/[^/]+/releases/download/[^?]+)(\?.*)?$'
+          if [[ "${RELEASE_MIRROR_LOOKUP:-true}" != "true" || "${server%/}" == "https://github.com" || ! "${url}" =~ ${re} ]]; then
+            echo "${url}"
+            return
+          fi
+          local path="${BASH_REMATCH[1]}" query="${BASH_REMATCH[2]}"
+          local mirror="${server%/}/${path}" file meta effective host
+          mkdir -p "${dest}"
+          file="${dest}/$(basename "${path}")"
+          # The token is only sent to the instance: curl drops it on cross-host redirects.
+          # A login or error page can come back as 200 after redirects, so treat HTML
+          # or a login host as a miss.
+          if meta="$(curl -sSfL --retry 2 --max-time 300 -H "Authorization: token ${GITHUB_TOKEN}" \
+              -o "${file}" -w '%{content_type} %{url_effective}' "${mirror}" 2>/dev/null)" &&
+            effective="${meta#* }" && host="${effective#*://}" && host="${host%%/*}" &&
+            [[ "${meta%% *}" != text/html* && "${host}" != login.* && -s "${file}" ]]; then
+            echo "Using ${mirror}" >&2
+            echo "${file}${query}"
+          else
+            rm -f "${file}"
+            echo "No copy at ${mirror}; using ${url}" >&2
+            echo "${url}"
+          fi
+        }
+
         if [[ "${RUNNER_OS}" == "Linux" ]]
         then
           TEMP_DIR="${RUNNER_TEMP}/go-getter"
@@ -116,7 +151,12 @@ runs:
         else
           echo "Downloading hashicorp/go-getter from ${RELEASE_URL}"
           mkdir -p "${TEMP_DIR}" && cd "${TEMP_DIR}"
-          curl -sfL "${RELEASE_URL}" -o go-getter.zip
+          SOURCE="$(resolve_release_mirror "${RELEASE_URL}" "${TEMP_DIR}/mirror")"
+          if [[ "${SOURCE}" == "${RELEASE_URL}" ]]; then
+            curl -sfL "${RELEASE_URL}" -o go-getter.zip
+          else
+            mv "${SOURCE}" go-getter.zip
+          fi
           unzip go-getter.zip
         fi
 
@@ -131,11 +171,45 @@ runs:
         INSTALL_PATH: '${{ inputs.install_path }}'
         DOWNLOAD_URL: '${{ inputs.download_url }}'
         CHECKSUM: '${{ inputs.checksum }}'
+        GITHUB_TOKEN: '${{ github.token }}'
+        RELEASE_MIRROR_LOOKUP: '${{ inputs.release_mirror_lookup }}'
       run: |-
         # Download binary
+        # Prints a local copy of a github.com release asset fetched from the same
+        # path on this GHES instance, or the original URL if there is none.
+        resolve_release_mirror() {
+          local url="$1" dest="$2" server="${GITHUB_SERVER_URL:-https://github.com}"
+          local re='^https://github\.com/([^/]+/[^/]+/releases/download/[^?]+)(\?.*)?$'
+          if [[ "${RELEASE_MIRROR_LOOKUP:-true}" != "true" || "${server%/}" == "https://github.com" || ! "${url}" =~ ${re} ]]; then
+            echo "${url}"
+            return
+          fi
+          local path="${BASH_REMATCH[1]}" query="${BASH_REMATCH[2]}"
+          local mirror="${server%/}/${path}" file meta effective host
+          mkdir -p "${dest}"
+          file="${dest}/$(basename "${path}")"
+          # The token is only sent to the instance: curl drops it on cross-host redirects.
+          # A login or error page can come back as 200 after redirects, so treat HTML
+          # or a login host as a miss.
+          if meta="$(curl -sSfL --retry 2 --max-time 300 -H "Authorization: token ${GITHUB_TOKEN}" \
+              -o "${file}" -w '%{content_type} %{url_effective}' "${mirror}" 2>/dev/null)" &&
+            effective="${meta#* }" && host="${effective#*://}" && host="${host%%/*}" &&
+            [[ "${meta%% *}" != text/html* && "${host}" != login.* && -s "${file}" ]]; then
+            echo "Using ${mirror}" >&2
+            echo "${file}${query}"
+          else
+            rm -f "${file}"
+            echo "No copy at ${mirror}; using ${url}" >&2
+            echo "${url}"
+          fi
+        }
+
+        ORIGINAL_URL="${DOWNLOAD_URL}"
+        DOWNLOAD_URL="$(resolve_release_mirror "${DOWNLOAD_URL}" "${RUNNER_TEMP}/setup-binary-mirror")"
+
         if [[ -n "${CHECKSUM}" ]]; then
           SEPARATOR="?"
-          if [[ "" == *"?"* ]]; then
+          if [[ "${DOWNLOAD_URL}" == *"?"* ]]; then
             SEPARATOR="&"
           fi
 
@@ -143,6 +217,15 @@ runs:
         fi
 
         "${GOGETTER_PATH}/go-getter" "${DOWNLOAD_URL}" "${INSTALL_PATH}"
+
+        # go-getter symlinks local non-archive files instead of copying them;
+        # replace those links so the cache and later steps see real files.
+        if [[ "${DOWNLOAD_URL}" != "${ORIGINAL_URL}"* ]]; then
+          while IFS= read -r -d '' link; do
+            target="$(readlink "${link}")"
+            cp "${target}" "${link}.tmp" && mv -f "${link}.tmp" "${link}"
+          done < <(find "${INSTALL_PATH}" -type l -print0)
+        fi
 
     - name: 'Save cache binary'
       if: |
