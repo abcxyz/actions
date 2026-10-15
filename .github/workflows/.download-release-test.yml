@@ -27,6 +27,9 @@ env:
   # A real release asset used for the github.com path and the fallbacks.
   ASSET_URL: 'https://github.com/sethvargo/ratchet/releases/download/v0.6.0/ratchet_0.6.0_linux_amd64.tar.gz'
   ASSET_SHA256: 'e7f668b477d7b3716eb9b242951e986cf3550697735077d6769eb7064121191f'
+  # A real raw file, pinned by commit, for the raw fallbacks.
+  RAW_URL: 'https://raw.githubusercontent.com/abcxyz/actions/d8c8e723b4a90310d3b2affcc51c6ab8bd0313fc/.yamllint.yml'
+  RAW_SHA256: '3b81dcad86dc4e1d3abfab300832f9f26cd2cd04243b6efd83c1163d61b5d53c'
 
 jobs:
   download-release-test:
@@ -36,7 +39,8 @@ jobs:
         uses: 'actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683' # ratchet:actions/checkout@v4
 
       # A fake GHES on :18080 that serves the releases API for
-      # sethvargo/ratchet v0.6.0 (the asset returns MIRRORED), and one on
+      # sethvargo/ratchet v0.6.0 (the asset returns MIRRORED) and the contents
+      # API for abcxyz/actions .yamllint.yml (returns RAWMIRRORED), and one on
       # :18081 that answers everything with an HTML login page.
       - name: 'Start fake GHES'
         shell: 'bash'
@@ -61,6 +65,10 @@ jobs:
                       if self.headers.get("Accept") != "application/octet-stream":
                           return self.reply(415, "text/plain", b"")
                       self.send_response(302); self.send_header("Location", "/storage/9?token=signed"); self.end_headers(); return
+                  if self.path == "/api/v3/repos/abcxyz/actions/contents/.yamllint.yml?ref=d8c8e723b4a90310d3b2affcc51c6ab8bd0313fc":
+                      if auth != "token fake-token" or self.headers.get("Accept") != "application/vnd.github.raw":
+                          return self.reply(404, "application/json", b"{}")
+                      return self.reply(200, "application/vnd.github.raw", b"RAWMIRRORED\n")
                   if self.path.startswith("/storage/9"):
                       return self.reply(200, "application/octet-stream", b"MIRRORED\n")
                   return self.reply(404, "application/json", b"{}")
@@ -120,6 +128,36 @@ jobs:
           server_url: 'http://localhost:18080'
           api_url: 'http://localhost:18080/api/v3'
 
+      - name: 'GHES raw hit: downloads the mirrored file'
+        id: 'rawhit'
+        uses: './.github/actions/download-release' # ratchet:exclude
+        with:
+          url: '${{ env.RAW_URL }}'
+          path: '${{ runner.temp }}/rawhit/.yamllint.yml'
+          token: 'fake-token'
+          server_url: 'http://localhost:18080'
+          api_url: 'http://localhost:18080/api/v3'
+
+      - name: 'GHES raw miss: falls back to raw.githubusercontent.com'
+        id: 'rawmiss'
+        uses: './.github/actions/download-release' # ratchet:exclude
+        with:
+          url: 'https://raw.githubusercontent.com/abcxyz/actions/d8c8e723b4a90310d3b2affcc51c6ab8bd0313fc/.hadolint.yml'
+          path: '${{ runner.temp }}/rawmiss/.hadolint.yml'
+          token: 'fake-token'
+          server_url: 'http://localhost:18080'
+          api_url: 'http://localhost:18080/api/v3'
+
+      - name: 'GHES raw login page: falls back to raw.githubusercontent.com'
+        id: 'rawhtml'
+        uses: './.github/actions/download-release' # ratchet:exclude
+        with:
+          url: '${{ env.RAW_URL }}'
+          path: '${{ runner.temp }}/rawhtml/.yamllint.yml'
+          token: 'fake-token'
+          server_url: 'http://localhost:18081'
+          api_url: 'http://localhost:18081/api/v3'
+
       - name: 'GHES lookup disabled: downloads upstream'
         id: 'disabled'
         uses: './.github/actions/download-release' # ratchet:exclude
@@ -141,6 +179,10 @@ jobs:
           HTML_SOURCE: '${{ steps.html.outputs.source }}'
           BADTOKEN_SOURCE: '${{ steps.badtoken.outputs.source }}'
           DISABLED_SOURCE: '${{ steps.disabled.outputs.source }}'
+          RAWHIT_SOURCE: '${{ steps.rawhit.outputs.source }}'
+          RAWHIT_URL: '${{ steps.rawhit.outputs.url }}'
+          RAWMISS_SOURCE: '${{ steps.rawmiss.outputs.source }}'
+          RAWHTML_SOURCE: '${{ steps.rawhtml.outputs.source }}'
         run: |-
           set -euo pipefail
           fail() { echo "::error ::$*"; exit 1; }
@@ -153,6 +195,14 @@ jobs:
           [[ "${HTML_SOURCE}" == "upstream" ]] || fail "html: source=${HTML_SOURCE}"
           [[ "${BADTOKEN_SOURCE}" == "upstream" ]] || fail "badtoken: source=${BADTOKEN_SOURCE}"
           [[ "${DISABLED_SOURCE}" == "upstream" ]] || fail "disabled: source=${DISABLED_SOURCE}"
+
+          [[ "${RAWHIT_SOURCE}" == "ghes" ]] || fail "rawhit: source=${RAWHIT_SOURCE}"
+          [[ "${RAWHIT_URL}" == "http://localhost:18080/abcxyz/actions/raw/d8c8e723b4a90310d3b2affcc51c6ab8bd0313fc/.yamllint.yml" ]] || fail "rawhit: url=${RAWHIT_URL}"
+          [[ "$(cat "${RUNNER_TEMP}/rawhit/.yamllint.yml")" == "RAWMIRRORED" ]] || fail "rawhit: wrong content"
+          [[ "${RAWMISS_SOURCE}" == "upstream" ]] || fail "rawmiss: source=${RAWMISS_SOURCE}"
+          [[ -s "${RUNNER_TEMP}/rawmiss/.hadolint.yml" ]] || fail "rawmiss: empty"
+          [[ "${RAWHTML_SOURCE}" == "upstream" ]] || fail "rawhtml: source=${RAWHTML_SOURCE}"
+          echo "${RAW_SHA256}  ${RUNNER_TEMP}/rawhtml/.yamllint.yml" | sha256sum --check
 
           for d in github html badtoken disabled; do
             echo "${ASSET_SHA256}  ${RUNNER_TEMP}/${d}/ratchet.tar.gz" | sha256sum --check

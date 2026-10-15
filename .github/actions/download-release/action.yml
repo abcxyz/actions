@@ -15,14 +15,15 @@
 name: 'Download Release Asset'
 
 description: |-
-  Download a github.com release asset to a file. On GitHub Enterprise Server,
-  first look for the same asset on the same release of the current GitHub
-  host and fall back to github.com if it is not there. This avoids github.com
-  rate limits on shared-egress runners when the instance mirrors the release.
+  Download a github.com release asset or raw.githubusercontent.com file to a
+  file. On GitHub Enterprise Server, first look for the same asset (on the
+  same release) or file (at the same ref) on the current GitHub host and fall
+  back to github.com if it is not there. This avoids github.com rate limits on
+  shared-egress runners when the instance mirrors the repository.
 
 inputs:
   url:
-    description: 'Release asset URL, e.g. https://github.com/<owner>/<repo>/releases/download/<tag>/<asset>. Other URLs are downloaded as-is.'
+    description: 'Release asset URL (https://github.com/<owner>/<repo>/releases/download/<tag>/<asset>) or raw file URL (https://raw.githubusercontent.com/<owner>/<repo>/<ref>/<path>, where <ref> has no slashes). Other URLs are downloaded as-is.'
     required: true
   path:
     description: 'File to write. Parent directories are created.'
@@ -110,6 +111,26 @@ runs:
           fi
           rm -f "${DEST}"
           echo "No copy of ${REPO} ${TAG} ${NAME} on ${SERVER_URL}; using ${URL}"
+        fi
+
+        # raw.githubusercontent.com/<owner>/<repo>/<ref>/<path> maps to the
+        # contents API at <ref>. GHES /raw/ paths also reject tokens.
+        RAW_RE='^https://raw\.githubusercontent\.com/([^/]+/[^/]+)/([^/]+)/([^?]+)$'
+        if [[ "${MIRROR_LOOKUP}" == "true" && "${SERVER_URL}" != "https://github.com" && "${URL}" =~ ${RAW_RE} ]]; then
+          REPO="${BASH_REMATCH[1]}"
+          REF="${BASH_REMATCH[2]}"
+          FILE="${BASH_REMATCH[3]}"
+          MIRROR="${SERVER_URL}/${REPO}/raw/${REF}/${FILE}"
+
+          if TYPE="$(curl -sSfL --retry 2 --max-time 300 -H "Authorization: token ${TOKEN}" \
+              -H 'Accept: application/vnd.github.raw' -o "${DEST}" -w '%{content_type}' \
+              "${API_URL}/repos/${REPO}/contents/${FILE}?ref=${REF}" 2>/dev/null)" &&
+            [[ "${TYPE}" != text/html* && "${TYPE}" != application/json* && -e "${DEST}" ]]; then
+            finish ghes "${MIRROR}"
+            exit 0
+          fi
+          rm -f "${DEST}"
+          echo "No copy of ${REPO}@${REF} ${FILE} on ${SERVER_URL}; using ${URL}"
         fi
 
         # Only send the token upstream when it belongs to that host.
