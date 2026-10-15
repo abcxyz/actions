@@ -89,53 +89,15 @@ runs:
         path: '${{ inputs.install_path }}'
         key: 'setup-binary-${{ inputs.cache_key }}'
 
-    - name: 'Install hashicorp/go-getter'
-      id: 'go-getter'
+    - name: 'Resolve hashicorp/go-getter'
+      id: 'go-getter-release'
       if: |
         steps.cache-binary.outputs.cache-hit != 'true'
       shell: 'bash'
       env:
         GOGETTER_VERSION: '1.7.1'
-        GITHUB_TOKEN: '${{ github.token }}'
-        RELEASE_MIRROR_LOOKUP: '${{ inputs.release_mirror_lookup }}'
       run: |-
-        # Install hashicorp/go-getter
-        # Prints a local copy of a github.com release asset fetched from the same
-        # release on this GHES instance, or the original URL if there is none.
-        resolve_release_mirror() {
-          local url="$1" dest="$2" server="${GITHUB_SERVER_URL:-https://github.com}"
-          local re='^https://github\.com/([^/]+/[^/]+)/releases/download/([^/?]+)/([^/?]+)(\?.*)?$'
-          if [[ "${RELEASE_MIRROR_LOOKUP:-true}" != "true" || "${server%/}" == "https://github.com" || ! "${url}" =~ ${re} ]]; then
-            echo "${url}"
-            return
-          fi
-          local repo="${BASH_REMATCH[1]}" tag="${BASH_REMATCH[2]}" name="${BASH_REMATCH[3]}" query="${BASH_REMATCH[4]}"
-          local api="${GITHUB_API_URL:-${server%/}/api/v3}" asset file type
-          name="$(printf '%b' "${name//%/\\x}")"
-          # GHES only accepts tokens on the API, not on /releases/download/ (which
-          # redirects to the login page), so resolve the asset through the API.
-          asset="$(curl -sSf --retry 2 -H "Authorization: token ${GITHUB_TOKEN}" \
-              "${api}/repos/${repo}/releases/tags/${tag}" 2>/dev/null | tr ',' '\n' |
-            awk -v n="${name}" '
-              match($0, /"url": *"[^"]*\/releases\/assets\/[0-9]+"/) { u = substr($0, RSTART, RLENGTH); sub(/^"url": *"/, "", u); sub(/"$/, "", u) }
-              index($0, "\"name\": \"" n "\"") && u != "" { print u; exit }')" || true
-          mkdir -p "${dest}"
-          file="${dest}/${name}"
-          # The token is only sent to the instance: curl drops it on cross-host
-          # redirects. Treat an HTML response (e.g. a login page) as a miss.
-          if [[ -n "${asset}" ]] &&
-            type="$(curl -sSfL --retry 2 --max-time 300 -H "Authorization: token ${GITHUB_TOKEN}" \
-              -H 'Accept: application/octet-stream' -o "${file}" -w '%{content_type}' "${asset}" 2>/dev/null)" &&
-            [[ "${type}" != text/html* && -s "${file}" ]]; then
-            echo "Using ${server%/}/${repo}/releases/download/${tag}/${name}" >&2
-            echo "${file}${query}"
-          else
-            rm -f "${file}"
-            echo "No copy of ${repo} ${tag} ${name} on ${server%/}; using ${url}" >&2
-            echo "${url}"
-          fi
-        }
-
+        # Resolve hashicorp/go-getter
         if [[ "${RUNNER_OS}" == "Linux" ]]
         then
           TEMP_DIR="${RUNNER_TEMP}/go-getter"
@@ -153,21 +115,79 @@ runs:
           exit 1
         fi
 
+        INSTALLED=false
         if [[ -f "${TEMP_DIR}/go-getter" ]]; then
           echo "Skipping, go-getter is already downloaded"
-        else
-          echo "Downloading hashicorp/go-getter from ${RELEASE_URL}"
-          mkdir -p "${TEMP_DIR}" && cd "${TEMP_DIR}"
-          SOURCE="$(resolve_release_mirror "${RELEASE_URL}" "${TEMP_DIR}/mirror")"
-          if [[ "${SOURCE}" == "${RELEASE_URL}" ]]; then
-            curl -sfL "${RELEASE_URL}" -o go-getter.zip
-          else
-            mv "${SOURCE}" go-getter.zip
-          fi
+          INSTALLED=true
+        fi
+
+        {
+          echo "path=${TEMP_DIR}"
+          echo "url=${RELEASE_URL}"
+          echo "installed=${INSTALLED}"
+        } >> "${GITHUB_OUTPUT}"
+
+    - name: 'Download hashicorp/go-getter'
+      if: |
+        steps.cache-binary.outputs.cache-hit != 'true' && steps.go-getter-release.outputs.installed != 'true'
+      uses: 'abcxyz/actions/.github/actions/download-release@d8c8e723b4a90310d3b2affcc51c6ab8bd0313fc' # ratchet:abcxyz/actions/.github/actions/download-release@main
+      with:
+        url: '${{ steps.go-getter-release.outputs.url }}'
+        path: '${{ steps.go-getter-release.outputs.path }}/go-getter.zip'
+        mirror_lookup: '${{ inputs.release_mirror_lookup }}'
+
+    - name: 'Install hashicorp/go-getter'
+      id: 'go-getter'
+      if: |
+        steps.cache-binary.outputs.cache-hit != 'true'
+      shell: 'bash'
+      env:
+        TEMP_DIR: '${{ steps.go-getter-release.outputs.path }}'
+        INSTALLED: '${{ steps.go-getter-release.outputs.installed }}'
+      run: |-
+        # Install hashicorp/go-getter
+        if [[ "${INSTALLED}" != "true" ]]; then
+          cd "${TEMP_DIR}"
           unzip go-getter.zip
         fi
 
         echo "path=${TEMP_DIR}" >> "${GITHUB_OUTPUT}"
+
+    # On GitHub Enterprise Server, fetch github.com release assets through
+    # download-release so a copy mirrored onto this instance is used when
+    # present. go-getter then reads the local file; any go-getter query
+    # (e.g. ?archive=) is kept.
+    - name: 'Resolve download'
+      id: 'resolve'
+      if: |
+        steps.cache-binary.outputs.cache-hit != 'true'
+      shell: 'bash'
+      env:
+        DOWNLOAD_URL: '${{ inputs.download_url }}'
+        MIRROR_LOOKUP: '${{ inputs.release_mirror_lookup }}'
+        SERVER_URL: '${{ github.server_url }}'
+      run: |-
+        # Resolve download
+        RE='^(https://github\.com/[^/]+/[^/]+/releases/download/[^/?]+/([^/?]+))(\?.*)?$'
+        if [[ "${MIRROR_LOOKUP}" == "true" && "${SERVER_URL%/}" != "https://github.com" && "${DOWNLOAD_URL}" =~ ${RE} ]]; then
+          NAME="$(printf '%b' "${BASH_REMATCH[2]//%/\\x}")"
+          {
+            echo "local=true"
+            echo "url=${BASH_REMATCH[1]}"
+            echo "path=${RUNNER_TEMP}/setup-binary-download/${NAME}"
+            echo "query=${BASH_REMATCH[3]}"
+          } >> "${GITHUB_OUTPUT}"
+        else
+          echo "local=false" >> "${GITHUB_OUTPUT}"
+        fi
+
+    - name: 'Download release asset'
+      if: |
+        steps.cache-binary.outputs.cache-hit != 'true' && steps.resolve.outputs.local == 'true'
+      uses: 'abcxyz/actions/.github/actions/download-release@d8c8e723b4a90310d3b2affcc51c6ab8bd0313fc' # ratchet:abcxyz/actions/.github/actions/download-release@main
+      with:
+        url: '${{ steps.resolve.outputs.url }}'
+        path: '${{ steps.resolve.outputs.path }}'
 
     - name: 'Download binary'
       if: |
@@ -178,48 +198,14 @@ runs:
         INSTALL_PATH: '${{ inputs.install_path }}'
         DOWNLOAD_URL: '${{ inputs.download_url }}'
         CHECKSUM: '${{ inputs.checksum }}'
-        GITHUB_TOKEN: '${{ github.token }}'
-        RELEASE_MIRROR_LOOKUP: '${{ inputs.release_mirror_lookup }}'
+        LOCAL: '${{ steps.resolve.outputs.local }}'
+        LOCAL_PATH: '${{ steps.resolve.outputs.path }}'
+        LOCAL_QUERY: '${{ steps.resolve.outputs.query }}'
       run: |-
         # Download binary
-        # Prints a local copy of a github.com release asset fetched from the same
-        # release on this GHES instance, or the original URL if there is none.
-        resolve_release_mirror() {
-          local url="$1" dest="$2" server="${GITHUB_SERVER_URL:-https://github.com}"
-          local re='^https://github\.com/([^/]+/[^/]+)/releases/download/([^/?]+)/([^/?]+)(\?.*)?$'
-          if [[ "${RELEASE_MIRROR_LOOKUP:-true}" != "true" || "${server%/}" == "https://github.com" || ! "${url}" =~ ${re} ]]; then
-            echo "${url}"
-            return
-          fi
-          local repo="${BASH_REMATCH[1]}" tag="${BASH_REMATCH[2]}" name="${BASH_REMATCH[3]}" query="${BASH_REMATCH[4]}"
-          local api="${GITHUB_API_URL:-${server%/}/api/v3}" asset file type
-          name="$(printf '%b' "${name//%/\\x}")"
-          # GHES only accepts tokens on the API, not on /releases/download/ (which
-          # redirects to the login page), so resolve the asset through the API.
-          asset="$(curl -sSf --retry 2 -H "Authorization: token ${GITHUB_TOKEN}" \
-              "${api}/repos/${repo}/releases/tags/${tag}" 2>/dev/null | tr ',' '\n' |
-            awk -v n="${name}" '
-              match($0, /"url": *"[^"]*\/releases\/assets\/[0-9]+"/) { u = substr($0, RSTART, RLENGTH); sub(/^"url": *"/, "", u); sub(/"$/, "", u) }
-              index($0, "\"name\": \"" n "\"") && u != "" { print u; exit }')" || true
-          mkdir -p "${dest}"
-          file="${dest}/${name}"
-          # The token is only sent to the instance: curl drops it on cross-host
-          # redirects. Treat an HTML response (e.g. a login page) as a miss.
-          if [[ -n "${asset}" ]] &&
-            type="$(curl -sSfL --retry 2 --max-time 300 -H "Authorization: token ${GITHUB_TOKEN}" \
-              -H 'Accept: application/octet-stream' -o "${file}" -w '%{content_type}' "${asset}" 2>/dev/null)" &&
-            [[ "${type}" != text/html* && -s "${file}" ]]; then
-            echo "Using ${server%/}/${repo}/releases/download/${tag}/${name}" >&2
-            echo "${file}${query}"
-          else
-            rm -f "${file}"
-            echo "No copy of ${repo} ${tag} ${name} on ${server%/}; using ${url}" >&2
-            echo "${url}"
-          fi
-        }
-
-        ORIGINAL_URL="${DOWNLOAD_URL}"
-        DOWNLOAD_URL="$(resolve_release_mirror "${DOWNLOAD_URL}" "${RUNNER_TEMP}/setup-binary-mirror")"
+        if [[ "${LOCAL}" == "true" ]]; then
+          DOWNLOAD_URL="${LOCAL_PATH}${LOCAL_QUERY}"
+        fi
 
         if [[ -n "${CHECKSUM}" ]]; then
           SEPARATOR="?"
@@ -234,7 +220,7 @@ runs:
 
         # go-getter symlinks local non-archive files instead of copying them;
         # replace those links so the cache and later steps see real files.
-        if [[ "${DOWNLOAD_URL}" != "${ORIGINAL_URL}"* ]]; then
+        if [[ "${LOCAL}" == "true" ]]; then
           while IFS= read -r -d '' link; do
             target="$(readlink "${link}")"
             cp "${target}" "${link}.tmp" && mv -f "${link}.tmp" "${link}"

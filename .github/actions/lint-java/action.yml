@@ -53,62 +53,39 @@ runs:
         cache: '${{ inputs.graalvm_cache }}'
         native-image-job-reports: 'true'
 
-    - name: 'Download graalvm google-java-format binary'
+    - name: 'Resolve graalvm google-java-format binary'
+      id: 'google-java-format'
       shell: 'bash'
       env:
         GOOGLE_JAVA_FORMAT_VERSION: '${{ inputs.google_java_format_version }}'
-        GITHUB_TOKEN: '${{ github.token }}'
+        TOOL_CACHE: '${{ runner.tool_cache }}'
       run: |-
-        # Prints a local copy of a github.com release asset fetched from the same
-        # release on this GHES instance, or the original URL if there is none.
-        resolve_release_mirror() {
-          local url="$1" dest="$2" server="${GITHUB_SERVER_URL:-https://github.com}"
-          local re='^https://github\.com/([^/]+/[^/]+)/releases/download/([^/?]+)/([^/?]+)(\?.*)?$'
-          if [[ "${RELEASE_MIRROR_LOOKUP:-true}" != "true" || "${server%/}" == "https://github.com" || ! "${url}" =~ ${re} ]]; then
-            echo "${url}"
-            return
-          fi
-          local repo="${BASH_REMATCH[1]}" tag="${BASH_REMATCH[2]}" name="${BASH_REMATCH[3]}" query="${BASH_REMATCH[4]}"
-          local api="${GITHUB_API_URL:-${server%/}/api/v3}" asset file type
-          name="$(printf '%b' "${name//%/\\x}")"
-          # GHES only accepts tokens on the API, not on /releases/download/ (which
-          # redirects to the login page), so resolve the asset through the API.
-          asset="$(curl -sSf --retry 2 -H "Authorization: token ${GITHUB_TOKEN}" \
-              "${api}/repos/${repo}/releases/tags/${tag}" 2>/dev/null | tr ',' '\n' |
-            awk -v n="${name}" '
-              match($0, /"url": *"[^"]*\/releases\/assets\/[0-9]+"/) { u = substr($0, RSTART, RLENGTH); sub(/^"url": *"/, "", u); sub(/"$/, "", u) }
-              index($0, "\"name\": \"" n "\"") && u != "" { print u; exit }')" || true
-          mkdir -p "${dest}"
-          file="${dest}/${name}"
-          # The token is only sent to the instance: curl drops it on cross-host
-          # redirects. Treat an HTML response (e.g. a login page) as a miss.
-          if [[ -n "${asset}" ]] &&
-            type="$(curl -sSfL --retry 2 --max-time 300 -H "Authorization: token ${GITHUB_TOKEN}" \
-              -H 'Accept: application/octet-stream' -o "${file}" -w '%{content_type}' "${asset}" 2>/dev/null)" &&
-            [[ "${type}" != text/html* && -s "${file}" ]]; then
-            echo "Using ${server%/}/${repo}/releases/download/${tag}/${name}" >&2
-            echo "${file}${query}"
-          else
-            rm -f "${file}"
-            echo "No copy of ${repo} ${tag} ${name} on ${server%/}; using ${url}" >&2
-            echo "${url}"
-          fi
-        }
-
-        BIN="${{ runner.tool_cache }}/google-java-format-${GOOGLE_JAVA_FORMAT_VERSION}"
-
+        BIN="${TOOL_CACHE}/google-java-format-${GOOGLE_JAVA_FORMAT_VERSION}"
+        INSTALLED=false
         if [[ -x "${BIN}" ]]; then
           echo "Already installed!"
-        else
-          URL="https://github.com/google/google-java-format/releases/download/v${GOOGLE_JAVA_FORMAT_VERSION}/google-java-format_linux-x86-64"
-          SOURCE="$(resolve_release_mirror "${URL}" "${RUNNER_TEMP}/lint-java-mirror")"
-          if [[ "${SOURCE}" == "${URL}" ]]; then
-            curl -sLfo "${BIN}" "${URL}"
-          else
-            mv "${SOURCE}" "${BIN}"
-          fi
-          chmod +x "${BIN}"
+          INSTALLED=true
         fi
+        {
+          echo "bin=${BIN}"
+          echo "installed=${INSTALLED}"
+          echo "url=https://github.com/google/google-java-format/releases/download/v${GOOGLE_JAVA_FORMAT_VERSION}/google-java-format_linux-x86-64"
+        } >> "${GITHUB_OUTPUT}"
+
+    - name: 'Download graalvm google-java-format binary'
+      if: |
+        steps.google-java-format.outputs.installed != 'true'
+      uses: 'abcxyz/actions/.github/actions/download-release@d8c8e723b4a90310d3b2affcc51c6ab8bd0313fc' # ratchet:abcxyz/actions/.github/actions/download-release@main
+      with:
+        url: '${{ steps.google-java-format.outputs.url }}'
+        path: '${{ steps.google-java-format.outputs.bin }}'
+
+    - name: 'Make google-java-format executable'
+      shell: 'bash'
+      env:
+        BIN: '${{ steps.google-java-format.outputs.bin }}'
+      run: |-
+        chmod +x "${BIN}"
 
     - name: 'Check formatting'
       shell: 'bash'
