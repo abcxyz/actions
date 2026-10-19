@@ -44,6 +44,17 @@ inputs:
     description: 'On GitHub Enterprise Server, first try the same github.com release asset path on the current GitHub host (`github.server_url`) and fall back to github.com if it is not there. Has no effect on github.com.'
     default: 'true'
     required: false
+  verify_provenance:
+    description: 'Verify the build provenance of the downloaded release asset with `gh attestation verify`, requiring that it was built from `provenance_ref` of the repository in `download_url`. Must be `true` or `false`. Only github.com release asset URLs are supported, and not all repositories publish provenance attestations for their releases.'
+    default: 'false'
+    required: false
+  provenance_ref:
+    description: 'The git ref (e.g. `refs/heads/main`) the provenance must have been built from when `verify_provenance` is enabled. Defaults to the default branch of the repository in `download_url`.'
+    required: false
+  github_token:
+    description: 'The github.com token used by `gh` for provenance verification. `gh` requires a token even for public repositories.'
+    default: '${{ github.token }}'
+    required: false
 
 runs:
   using: 'composite'
@@ -54,6 +65,7 @@ runs:
         DOWNLOAD_URL: '${{ inputs.download_url }}'
         INSTALL_PATH: '${{ inputs.install_path }}'
         BINARY_SUBPATH: '${{ inputs.binary_subpath }}'
+        VERIFY_PROVENANCE: '${{ inputs.verify_provenance }}'
       run: |
         # Validate inputs
         errors=false
@@ -75,6 +87,22 @@ runs:
           errors=true
           echo "::error ::binary_subpath is a required input"
         fi
+
+        case "${VERIFY_PROVENANCE}" in
+          true|TRUE)
+            RE='^https://github\.com/([^/]+/[^/]+)/releases/download/[^/?]+/([^/?]+)(\?.*)?$'
+            if [[ ! "${DOWNLOAD_URL}" =~ ${RE} ]]; then
+              errors=true
+              echo "::error ::download_url must be a GitHub release asset URL when verify_provenance is enabled"
+            fi
+            ;;
+          ''|false|FALSE)
+            ;;
+          *)
+            errors=true
+            echo "::error ::verify_provenance must be 'true' or 'false', got '${VERIFY_PROVENANCE}'"
+            ;;
+        esac
 
         if [ "${errors}" = true ]; then
           exit 1
@@ -153,10 +181,10 @@ runs:
 
         echo "path=${TEMP_DIR}" >> "${GITHUB_OUTPUT}"
 
-    # On GitHub Enterprise Server, fetch github.com release assets through
-    # download-release so a copy mirrored onto this instance is used when
-    # present. go-getter then reads the local file; any go-getter query
-    # (e.g. ?archive=) is kept.
+    # On GitHub Enterprise Server (with mirror lookup) or when provenance
+    # verification is enabled, fetch github.com release assets through
+    # download-release to a local file first. go-getter then reads the local
+    # file; any go-getter query (e.g. ?archive=) is kept.
     - name: 'Resolve download'
       id: 'resolve'
       if: |
@@ -165,17 +193,19 @@ runs:
       env:
         DOWNLOAD_URL: '${{ inputs.download_url }}'
         MIRROR_LOOKUP: '${{ inputs.release_mirror_lookup }}'
+        VERIFY_PROVENANCE: '${{ inputs.verify_provenance }}'
         SERVER_URL: '${{ github.server_url }}'
       run: |-
         # Resolve download
-        RE='^(https://github\.com/[^/]+/[^/]+/releases/download/[^/?]+/([^/?]+))(\?.*)?$'
-        if [[ "${MIRROR_LOOKUP}" == "true" && "${SERVER_URL%/}" != "https://github.com" && "${DOWNLOAD_URL}" =~ ${RE} ]]; then
-          NAME="$(printf '%b' "${BASH_REMATCH[2]//%/\\x}")"
+        RE='^(https://github\.com/([^/]+/[^/]+)/releases/download/[^/?]+/([^/?]+))(\?.*)?$'
+        if [[ ( "${VERIFY_PROVENANCE}" == "true" || "${VERIFY_PROVENANCE}" == "TRUE" || ( "${MIRROR_LOOKUP}" == "true" && "${SERVER_URL%/}" != "https://github.com" ) ) && "${DOWNLOAD_URL}" =~ ${RE} ]]; then
+          NAME="$(printf '%b' "${BASH_REMATCH[3]//%/\\x}")"
           {
             echo "local=true"
+            echo "repo=${BASH_REMATCH[2]}"
             echo "url=${BASH_REMATCH[1]}"
             echo "path=${RUNNER_TEMP}/setup-binary-download/${NAME}"
-            echo "query=${BASH_REMATCH[3]}"
+            echo "query=${BASH_REMATCH[4]}"
           } >> "${GITHUB_OUTPUT}"
         else
           echo "local=false" >> "${GITHUB_OUTPUT}"
@@ -188,6 +218,35 @@ runs:
       with:
         url: '${{ steps.resolve.outputs.url }}'
         path: '${{ steps.resolve.outputs.path }}'
+
+    # Verifies the release asset before go-getter extracts it. --repo binds
+    # the source repository and --source-ref binds the ref the triggering
+    # workflow ran from; both come from the signed Fulcio certificate, so
+    # releases built via reusable workflows in other repositories still pass.
+    - name: 'Verify binary provenance'
+      if: |
+        steps.cache-binary.outputs.cache-hit != 'true' && (inputs.verify_provenance == 'true' || inputs.verify_provenance == 'TRUE')
+      shell: 'bash'
+      env:
+        GH_TOKEN: '${{ inputs.github_token }}'
+        REPO: '${{ steps.resolve.outputs.repo }}'
+        ASSET_PATH: '${{ steps.resolve.outputs.path }}'
+        PROVENANCE_REF: '${{ inputs.provenance_ref }}'
+      run: |-
+        set -euo pipefail
+
+        if [[ -z "${PROVENANCE_REF}" ]]; then
+          DEFAULT_BRANCH="$(gh repo view "${REPO}" --json defaultBranchRef --jq '.defaultBranchRef.name')"
+          if [[ -z "${DEFAULT_BRANCH}" ]]; then
+            echo "::error ::Failed to determine default branch for repository ${REPO}"
+            exit 1
+          fi
+          PROVENANCE_REF="refs/heads/${DEFAULT_BRANCH}"
+        fi
+
+        gh attestation verify "${ASSET_PATH}" \
+          --repo "${REPO}" \
+          --source-ref "${PROVENANCE_REF}"
 
     - name: 'Download binary'
       if: |
