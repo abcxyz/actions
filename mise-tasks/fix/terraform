@@ -1,0 +1,8 @@
+#!/bin/bash
+#MISE description="Fix terraform files"
+#MISE quiet=true
+if which terraform >/dev/null; then
+    terraform fmt -recursive
+else
+    echo "Skipping 'terraform fmt' because no binary was found - Did you forget to 'mise use terraform'?"
+fi

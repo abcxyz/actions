@@ -1,0 +1,6 @@
+#!/bin/bash
+#MISE description="Lint java files"
+#MISE quiet=true
+#MISE tools={ "ubi:google/google-java-format" = "latest" }
+git ls-files | grep -E '\.(java)' | xargs \
+    google-java-format -i
