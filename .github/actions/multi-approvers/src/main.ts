@@ -15,6 +15,7 @@
 // The purpose of this file is to kick off the action from a GitHub context
 // (i.e. using the @actions/core.* and @actions/github.context).
 
+import { fileURLToPath } from "node:url";
 import * as ghCore from "@actions/core";
 import { context as ghContext } from "@actions/github";
 import { errorMessage } from "@google-github-actions/actions-utils";
@@ -22,7 +23,7 @@ import {
   EventName,
   isEventName,
   MultiApproversAction,
-} from "./multi-approvers";
+} from "./multi-approvers.js";
 
 type Core = typeof ghCore;
 type Context = typeof ghContext;
@@ -92,6 +93,6 @@ export async function main(core: Core = ghCore, context: Context = ghContext) {
   }
 }
 
-if (require.main === module) {
+if (process.argv[1] && fileURLToPath(import.meta.url) === process.argv[1]) {
   main();
 }
